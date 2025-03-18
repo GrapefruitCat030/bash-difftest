@@ -1,0 +1,41 @@
+graph TD
+    %% Main Components
+    main["main.py<br>(Entry Point)"] --> prep["Preparation Phase"]
+    main --> test["Testing Phase"]
+    
+    %% Preparation Phase
+    prep --> corpus["Corpus<br>(Shell Features)"]
+    corpus --> prompt["Prompt Engine<br>(src/prompt/)"]
+    prompt --> llm["LLM Client<br>(src/llm/)"]
+    llm --> mutator_gen["Mutator Generator<br>(src/mutator/)"]
+    mutator_gen --> mutator_val["Mutator Validator<br>(src/mutator/)"]
+    mutator_val -->|Feedback Loop| mutator_gen
+    mutator_val -->|Validated| mutator_store["Mutator Storage<br>(results/mutators/)"]
+    
+    %% Testing Phase
+    test --> seeds["Test Seeds<br>(Bash Scripts)"]
+    seeds --> chain["Mutation Chain<br>(src/mutation_chain/)"]
+    mutator_store -->|Load Mutators| chain
+    chain --> posix_code["Transformed POSIX<br>Shell Scripts"]
+    seeds --> diff_test["Differential Tester<br>(src/differential_testing/)"]
+    posix_code --> diff_test
+    diff_test --> results["Test Results<br>(results/tests/)"]
+    
+    %% Configuration
+    config["Configuration<br>(configs/config.json)"] --> main
+    
+    %% Utilities
+    utils["Utilities<br>(src/utils/)"] -.-> llm
+    utils -.-> mutator_val
+    utils -.-> diff_test
+    
+    %% Style
+    classDef component fill:#f9f,stroke:#333,stroke-width:1px;
+    classDef phase fill:#bbf,stroke:#33f,stroke-width:2px;
+    classDef data fill:#dfd,stroke:#3a3,stroke-width:1px;
+    classDef config fill:#ffd,stroke:#aa3,stroke-width:1px;
+    
+    class main,llm,prompt,mutator_gen,mutator_val,chain,diff_test component;
+    class prep,test phase;
+    class corpus,seeds,mutator_store,posix_code,results data;
+    class config,utils config;

@@ -1,0 +1,38 @@
+{
+    "llm": {
+        "provider": "openai",
+        "model": "gpt-4-turbo",
+        "max_tokens": 4096,
+        "temperature": 0.2,
+        "rate_limit_per_minute": 6
+    },
+    "prompt_engine": {
+        "template_dir": "src/prompt/templates",
+        "system_message": "You are an expert shell script converter specializing in transforming Bash scripts to POSIX-compliant shell scripts."
+    },
+    "corpus_path": "corpus",
+    "features": [
+        "array_operations",
+        "brace_expansion",
+        "string_manipulation",
+        "arithmetic_operations",
+        "advanced_redirections",
+        "process_substitution"
+    ],
+    "seeds": "seeds",
+    "results": {
+        "mutators": "src/mutation_chain/mutators",
+        "posix_code": "results/posix_code",
+        "reports": "results/reports"
+    },
+    "bash_path": "/bin/bash",
+    "posix_path": "/bin/sh",
+    "timeout": 5,
+    "max_validation_attempts": 3,
+    "validation": {
+        "test_examples_dir": "corpus/examples",
+        "bash_path": "/bin/bash",
+        "posix_path": "/bin/sh",
+        "timeout": 5
+    }
+}

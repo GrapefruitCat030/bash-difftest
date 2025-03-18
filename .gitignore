@@ -1,0 +1,5 @@
+tree-sitter-bash/
+
+results/posix_code/*.sh
+results/reports/*.txt
+results/reports/*.json
