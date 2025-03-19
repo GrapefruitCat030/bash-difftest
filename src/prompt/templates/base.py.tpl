@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Tuple
 def initialize_parser():
     tree_sitter.Language.build_library(
         'build/my-languages.so',
-        ['/home/njucs/project/shell-metamorphic-testing/tree-sitter-bash']
+        ['/user/to/tree-sitter-bash']
     )
     BASH_LANGUAGE = tree_sitter.Language('build/my-languages.so', 'bash')
     parser = tree_sitter.Parser()
