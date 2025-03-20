@@ -1,18 +1,18 @@
-你是一个精通Bash语法和POSIX Shell规范的代码转换器开发者。我需要你根据以下规则，编写一个Python程序，使用`tree-sitter-bash`的API，将Bash代码中的【{语法特性名称}】语法转换为等效的POSIX Shell实现。请严格按照以下结构和要求生成代码：
+你是一个精通Bash语法和POSIX Shell规范的代码转换器开发者。我需要你根据以下规则，编写一个Python程序，使用`tree-sitter-bash`的API，将Bash代码中的【$feature_name】语法转换为等效的POSIX Shell实现。请严格按照以下结构和要求生成代码：
 
 ---
 
 ### **任务说明**
 
-1. **目标**：将Bash代码中的 `{语法特性名称}` 语法替换为等效的POSIX Shell实现。
-2. **输入**：包含`{语法特性名称}`的Bash代码片段。
-3. **输出**：转换后的POSIX Shell代码，保留原有逻辑，但移除对`{语法特性名称}`的依赖。
+1. **目标**：将Bash代码中的 `$feature_name` 语法替换为等效的POSIX Shell实现。
+2. **输入**：包含`$feature_name`的Bash代码片段。
+3. **输出**：转换后的POSIX Shell代码，保留原有逻辑，但移除对`$feature_name`的依赖。
 
 ---
 
 ### **语法特性转换规则**
 
-{语法特性对比描述}
+$feature_rules
 
 ---
 
@@ -21,20 +21,20 @@
 **输入Bash代码**：
 
 ```
-{示例Bash代码段}
+$bash_example
 ```
 
 **输出POSIX代码**：
 
 ```
-{对应的POSIX转换结果}
+$posix_example
 ```
 
 ---
 
 ### **代码要求**
 
-- **使用 `tree-sitter-bash`**：通过解析Bash代码的AST（抽象语法树），定位 `{语法特性名称}` 的语法节点。
+- **使用 `tree-sitter-bash`**：通过解析Bash代码的AST（抽象语法树），定位 `$feature_name` 的语法节点。
 
 - **继承基类**：所有转换器必须继承自 `BaseMutator`：
 
@@ -77,18 +77,18 @@
 - **具体Mutator类实现**：
 
   ```python
-  class {语法特性名称}Mutator(BaseMutator):
+  class {feature}Mutator(BaseMutator):
       # 定义转换器基本信息
-      NAME = "{语法特性名称}_mutator"  # 转换器名称
-      DESCRIPTION = "将Bash {语法特性名称} 转换为 POSIX兼容语法"  # 转换器描述
-      TARGET_FEATURES = {"{语法特性名称}"}  # 目标Bash特性集合
+      NAME = "{feature}_mutator"  # 转换器名称
+      DESCRIPTION = "将Bash {feature} 转换为 POSIX兼容语法"  # 转换器描述
+      TARGET_FEATURES = {"{feature}"}  # 目标Bash特性集合
       
       # 定义目标节点类型（如进程替换的node.type为"process_substitution"）
       target_node_types = ["{对应的tree-sitter节点类型}"]
       
       def transform(self, source_code: str, context: Optional[Dict[str, Any]] = None) -> Tuple[str, Dict[str, Any]]:
           """
-          将Bash {语法特性名称} 语法转换为POSIX兼容代码
+          将Bash {feature} 语法转换为POSIX兼容代码
           
           Args:
               source_code: 需要转换的源代码
@@ -143,5 +143,5 @@
 3. **节点类型驱动**：通过`target_node_types`定义需要处理的语法节点类型，而非tree-sitter query。
 4. **补丁顺序**：使用`apply_patches`方法处理代码替换，确保偏移量正确。
 5. **上下文维护**：通过`context`参数记录已转换特性，方便转换链中后续转换器使用。
-6. **临时文件安全**：确保生成的临时文件名唯一，并添加清理逻辑（如`trap 'rm -f $tmpfile' EXIT`）。
+6. **临时文件安全**：确保生成的临时文件名唯一，并添加清理逻辑（如`trap 'rm -f tmp_0459c' EXIT`）。
 7. **兼容性**：生成的POSIX代码需符合ShellCheck规范，避免扩展语法。

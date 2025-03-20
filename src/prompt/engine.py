@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List, Dict, Optional
+from string import Template
 
 class PromptEngine:
     """Shell转换器的Prompt生成引擎"""
@@ -15,12 +16,12 @@ class PromptEngine:
         self.examples_dir = Path(config["prompt_engine"]["examples_dir"])
         self.template = self._load_templates()
 
-    def _load_templates(self) -> str:
+    def _load_templates(self) -> Template:
         """加载prompt模板文件"""
         if not self.template_path.exists():
             raise FileNotFoundError(f"模板文件 {self.template_path} 不存在")
         with open(self.template_path, "r", encoding="utf-8") as f:
-            return f.read()
+            return Template(f.read())
 
     def _load_shell_doc(self, feature: str) -> str:
         """
@@ -64,12 +65,11 @@ class PromptEngine:
         # 加载文档和示例
         doc_content = self._load_shell_doc(feature)
         examples = self._load_examples(feature)
-        
         # 填充模板
-        prompt = self.template.format(
-            语法特性名称=feature,
-            语法特性对比描述=doc_content,
-            示例Bash代码段=examples["bash"],
-            对应的POSIX转换结果=examples["posix"]
+        prompt = self.template.substitute(
+            feature_name=feature,
+            feature_rules=doc_content,
+            bash_example=examples["bash"],
+            posix_example=examples["posix"],
         )
         return prompt

@@ -8,6 +8,9 @@ init.sh
 tmp/
 TODO.md
 *.log
+**/*.log
+**/__pycache__/
+*.pyc
 
 kksk.py
 suki.py
