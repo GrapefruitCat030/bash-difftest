@@ -1,26 +1,28 @@
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import Dict, Any
 from string import Template
 
 class PromptEngine:
     """Shell转换器的Prompt生成引擎"""
     
-    def __init__(self, config: Dict):
+    def __init__(self, config: Dict[str, Any]):
         """
         初始化PromptEngine
         Args:
             config: 配置字典，包含模板路径、文档路径等
         """
-        self.template_path = Path(config["prompt_engine"]["template_dir"]) / "prompt.tpl"
-        self.docs_dir = Path(config["prompt_engine"]["docs_dir"])
-        self.examples_dir = Path(config["prompt_engine"]["examples_dir"])
-        self.template = self._load_templates()
+        self.template_path          = Path(config.get("template_dir")) / "prompt.tpl"
+        self.template               = self._load_templates(self.template_path)
+        self.refinement_path        = Path(config.get("template_dir")) / "refinement.tpl"
+        self.refinement_template    = self._load_templates(self.refinement_path)
+        self.docs_dir               = Path(config.get("docs_dir"))
+        self.examples_dir           = Path(config.get("examples_dir"))
 
-    def _load_templates(self) -> Template:
+    def _load_templates(self, template_path:Path) -> Template:
         """加载prompt模板文件"""
-        if not self.template_path.exists():
+        if not template_path.exists():
             raise FileNotFoundError(f"模板文件 {self.template_path} 不存在")
-        with open(self.template_path, "r", encoding="utf-8") as f:
+        with open(template_path, "r", encoding="utf-8") as f:
             return Template(f.read())
 
     def _load_shell_doc(self, feature: str) -> str:
@@ -73,3 +75,20 @@ class PromptEngine:
             posix_example=examples["posix"],
         )
         return prompt
+    
+    def generate_refinement_prompt(self, feature: str, feedback: str, previous_mutator_code:str) -> str:
+        """
+        生成用于改进mutator的prompt
+        Args:
+            feature: 语法特性名称 (如 'Array', 'ProcessSubstitution'等)
+            feedback: 上一次生成的mutator的反馈信息
+            previous_mutator_code: 上一次生成的mutator代码
+        Returns:
+            填充后的prompt字符串
+        """
+        prompt = self.refinement_template.substitute(
+            feature_name=feature,
+            feedback=feedback,
+            previous_code=previous_mutator_code
+        )
+        return prompt 

@@ -1,20 +1,23 @@
-class LLMClient:
-    def __init__(self, config: dict):
-        self.provider_name = config["llm"]["provider"]
-        self.model = config["llm"]["model"]
-        self.max_tokens = config["llm"]["max_tokens"]
-        self.temperature = config["llm"]["temperature"]
-        self.rate_limit = config["llm"]["rate_limit_per_minute"]
-        
-        self.provider = self._initialize_provider()
+from src.llm.factory import create_llm_provider
+from src.llm.providers.base import BaseProvider
+from typing import Dict, Any
 
-    def _initialize_provider(self):
-        from .factory import create_provider
-        return create_provider(self.provider_name, self.model, self.max_tokens, self.temperature)
+class LLMClient:
+    def __init__(self, config: Dict[str, Any]):
+        self.provider = self._initialize_provider(config)
+
+    def _initialize_provider(self, config: Dict[str, Any]) -> BaseProvider:
+        return create_llm_provider(config)
 
     def generate_response(self, prompt: str):
-        return self.provider.generate_response(prompt)
+        response = self.provider.generate_response(prompt)
+        content = self.provider.validate_response(response)
+        return content
+    
+    def refine_code(self, prompt: str):
+        response = self.provider.refine_code(prompt)
+        content = self.provider.validate_response(response)
+        return content
 
-    def set_rate_limit(self, limit: int):
-        self.rate_limit = limit
-        self.provider.set_rate_limit(limit)
+    def clear_history(self):
+        self.provider.clear_conversation_history() 

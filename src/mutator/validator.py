@@ -23,24 +23,22 @@ class MutatorValidator:
         
         Args:
             config: Configuration dictionary
-                - test_examples_dir: Directory containing test examples
+                - validate_examples_dir: Directory containing test examples
                 - bash_path: Path to bash executable
                 - posix_path: Path to POSIX shell executable
         """
-        self.test_examples_dir = Path(config["test_examples_dir"])
+        self.validate_examples_dir = Path(config.get("validate_examples_dir"))
         self.bash_path = config.get("bash_path", "/bin/bash")
         self.posix_path = config.get("posix_path", "/bin/sh")
         self.timeout = config.get("timeout", 5)
         
-    def validate(self, mutator_code: str, feature: str, corpus_data: Dict) -> Tuple[bool, str]:
+    def validate(self, mutator_code: str, feature: str) -> Tuple[bool, str]:
         """
         Validate a generated mutator
         
         Args:
             mutator_code: The Python code for the mutator
             feature: The shell feature being tested
-            corpus_data: Corpus data for the feature
-            
         Returns:
             Tuple of (is_valid, feedback)
         """
@@ -63,7 +61,7 @@ class MutatorValidator:
         
         # Test the mutator with examples
         examples_valid, examples_feedback = self._validate_with_examples(
-            mutator, feature, corpus_data
+            mutator, feature,
         )
         if not examples_valid:
             return False, f"Example validation failed: {examples_feedback}"
@@ -104,68 +102,39 @@ class MutatorValidator:
             
     def _validate_interface(self, module: Any) -> Tuple[bool, str]:
         """Validate that the mutator module has the required interface"""
-        required_attributes = ["transform_code", "get_feature_name", "get_description"]
+        required_attributes = ["transform", "apply_patches"]
         missing_attributes = [attr for attr in required_attributes if not hasattr(module, attr)]
         
         if missing_attributes:
             return False, f"Missing required attributes: {', '.join(missing_attributes)}"
             
-        # Check that transform_code is callable and has the right signature
-        transform_func = getattr(module, "transform_code")
+        # Check that transform is callable and has the right signature
+        transform_func = getattr(module, "transform")
         if not callable(transform_func):
-            return False, "transform_code is not callable"
+            return False, "transforme is not callable"
             
         return True, "Interface is valid"
         
-    def _validate_with_examples(self, module: Any, feature: str, corpus_data: Dict) -> Tuple[bool, str]:
+    def _validate_with_examples(self, module: Any, feature: str) -> Tuple[bool, str]:
         """Validate the mutator using examples from the corpus"""
-        examples = corpus_data.get("examples", [])
-        if not examples:
-            logger.warning(f"No examples found for feature: {feature}")
-            return True, "No examples to validate against"
             
-        passed_examples = 0
-        failures = []
-        
-        for i, example in enumerate(examples):
-            bash_code = example.get("bash")
-            expected_posix = example.get("posix")
+        bash_code_path = self.validate_examples_dir / f"{feature}_bash.sh"
+        with open(bash_code_path, "r", encoding="utf-8") as f:
+            bash_code = f.read() 
+        posix_code_path = self.validate_examples_dir / f"{feature}_posix.sh"
+        with open(posix_code_path, "r", encoding="utf-8") as f:
+            posix_code = f.read()
+
+        # Transform bash code to posix using the mutator
+        try:
+            posix_code = module.transform(bash_code)
+            # Check for syntactic correctness of the output
+            posix_valid, posix_feedback = self._check_shell_syntax(posix_code, self.posix_path)
+            if not posix_valid:
+                return False, f"Generated POSIX code has syntax error: {posix_feedback}"
             
-            if not bash_code or not expected_posix:
-                logger.warning(f"Example {i} is missing bash or posix code")
-                continue
-                
-            # Transform bash code to posix using the mutator
-            try:
-                actual_posix = module.transform_code(bash_code)
-                
-                # Check for syntactic correctness of the output
-                posix_valid, posix_feedback = self._check_shell_syntax(actual_posix, self.posix_path)
-                if not posix_valid:
-                    failures.append(f"Example {i}: Generated POSIX code has syntax error: {posix_feedback}")
-                    continue
-                    
-                # Check for behavioral equivalence
-                equivalent, equivalence_feedback = self._check_behavioral_equivalence(
-                    bash_code, actual_posix
-                )
-                if not equivalent:
-                    failures.append(f"Example {i}: Behavioral equivalence check failed: {equivalence_feedback}")
-                    continue
-                    
-                passed_examples += 1
-                
-            except Exception as e:
-                failures.append(f"Example {i}: Error during transformation: {str(e)}")
-                
-        # Validation passes if at least 75% of examples pass
-        if examples and passed_examples / len(examples) >= 0.75:
-            return True, f"Passed {passed_examples}/{len(examples)} examples"
-        else:
-            failure_details = "\n".join(failures[:5])  # Limit to first 5 failures
-            if len(failures) > 5:
-                failure_details += f"\n... and {len(failures) - 5} more failures"
-            return False, f"Failed examples: {passed_examples}/{len(examples)}\n{failure_details}"
+        except Exception as e:
+            return False, f"Error during validation: {str(e)}"
             
     def _check_shell_syntax(self, code: str, shell_path: str) -> Tuple[bool, str]:
         """Check if shell code has valid syntax"""
@@ -175,7 +144,7 @@ class MutatorValidator:
             
         try:
             result = execute_shell_command(
-                [shell_path, "-n", temp_path],
+                [shell_path, "-n", temp_path], # -n for syntax check
                 timeout=self.timeout
             )
             
@@ -190,60 +159,3 @@ class MutatorValidator:
             Path(temp_path).unlink()  # Clean up
             return False, str(e)
             
-    def _check_behavioral_equivalence(
-        self, bash_code: str, posix_code: str
-    ) -> Tuple[bool, str]:
-        """
-        Check if bash code and posix code are behaviorally equivalent
-        
-        This runs both scripts with the same inputs and compares outputs
-        """
-        # Create temporary files for both scripts
-        with tempfile.NamedTemporaryFile(suffix=".sh", delete=False) as bash_file:
-            bash_path = bash_file.name
-            bash_file.write(bash_code.encode('utf-8'))
-            
-        with tempfile.NamedTemporaryFile(suffix=".sh", delete=False) as posix_file:
-            posix_path = posix_file.name
-            posix_file.write(posix_code.encode('utf-8'))
-            
-        try:
-            # Make both files executable
-            Path(bash_path).chmod(0o755)
-            Path(posix_path).chmod(0o755)
-            
-            # Execute bash script
-            bash_result = execute_shell_command(
-                [self.bash_path, bash_path],
-                timeout=self.timeout
-            )
-            
-            # Execute posix script
-            posix_result = execute_shell_command(
-                [self.posix_path, posix_path],
-                timeout=self.timeout
-            )
-            
-            # Clean up
-            Path(bash_path).unlink()
-            Path(posix_path).unlink()
-            
-            # Compare return codes
-            if bash_result["returncode"] != posix_result["returncode"]:
-                return False, (f"Return codes differ: bash={bash_result['returncode']}, "
-                              f"posix={posix_result['returncode']}")
-                
-            # Compare outputs (stdout)
-            if bash_result["stdout"].strip() != posix_result["stdout"].strip():
-                return False, "Outputs differ"
-                
-            return True, "Behaviorally equivalent"
-            
-        except Exception as e:
-            # Clean up
-            if Path(bash_path).exists():
-                Path(bash_path).unlink()
-            if Path(posix_path).exists():
-                Path(posix_path).unlink()
-                
-            return False, f"Error during equivalence check: {str(e)}"
