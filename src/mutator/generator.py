@@ -95,7 +95,7 @@ class MutatorGenerator:
         This is a placeholder - you'll need to import your actual prompt engine
         """
         # Import your existing prompt engine here
-        from ..prompt.engine import PromptEngine
+        from src.prompt.engine import PromptEngine
         
         return PromptEngine(self.prompt_engine_config)
         
