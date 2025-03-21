@@ -1,5 +1,5 @@
 """
-Differential Testing Module for Shell Metamorphic Testing Framework
+Differential Testing Module for Shell Metamorphic Differential Testing Framework
 """
 
 from .tester import DifferentialTester

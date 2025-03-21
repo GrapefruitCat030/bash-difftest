@@ -1,4 +1,5 @@
 tree-sitter-bash/
+build/
 
 results/posix_code/*.sh
 results/reports/*.txt
@@ -12,5 +13,7 @@ TODO.md
 **/__pycache__/
 *.pyc
 
+
 kksk.py
 suki.py
+output.txt

@@ -144,15 +144,15 @@ class ArrayMutator(BaseMutator):
         # 解析数组元素
         elements = []
         for child in array_node.children:
-            if child.type == "string":
+            if child.type == "string" or child.type == "number":
                 elements.append(source_code[child.start_byte:child.end_byte])
         
         # 生成POSIX兼容代码
         posix_code = []
         for i, element in enumerate(elements):
-            posix_code.append(f"{array_name}_{i}={element}")
+            posix_code.append(f"{array_name}_{i}={element};")
         
-        posix_code.append(f"{array_name}__len={len(elements)}")
+        posix_code.append(f"{array_name}__len={len(elements)};")
         
         # 记录数组信息到上下文
         context['arrays'][array_name] = {

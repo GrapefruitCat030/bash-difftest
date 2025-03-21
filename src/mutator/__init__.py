@@ -1,5 +1,5 @@
 """
-Mutator package for Shell Metamorphic Testing Framework
+Mutator package for Shell Metamorphic Differential Testing Framework
 """
 
 from .generator import MutatorGenerator

@@ -1,5 +1,5 @@
 """
-Mutation Chain package for Shell Metamorphic Testing Framework
+Mutation Chain package for Shell Metamorphic Differential Testing Framework
 """
 
 from .chain     import MutatorChain

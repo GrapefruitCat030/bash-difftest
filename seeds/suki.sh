@@ -1,5 +1,6 @@
-arr1=(1 "suki" 3)
-for i in 1 2 3;
+arr1=(1 "b" 3)
+len=${#arr1[@]}
+for i in (seq 1 $len);
 do 
 	echo ${arr1[1]}
 done

@@ -1,3 +1,5 @@
+
+import logging
 from typing import List
 from .base import BaseMutator
 
@@ -15,8 +17,9 @@ class MutatorChain:
     def __init__(self):
         """初始化一个空的转换器链"""
         self.mutators: List[BaseMutator] = []
-        self.debug_mode: bool = False
-    
+        self.logger = logging.getLogger("mutator-chain")
+        self.logger.setLevel(logging.INFO)
+
     def register(self, mutator: BaseMutator) -> 'MutatorChain':
         """注册一个转换器到链上"""
         if not isinstance(mutator, BaseMutator):
@@ -44,25 +47,20 @@ class MutatorChain:
         context = {}  # 初始空上下文
         
         for i, mutator in enumerate(self.mutators):
-            if self.debug_mode:
-                print(f"[{i+1}/{len(self.mutators)}] 应用转换器: {mutator.__class__.__name__}")
-            
+            self.logger.debug(f"应用转换器: {mutator.__class__.__name__}")
+
             result, context = mutator.transform(result, context)
             
-            if self.debug_mode:
-                # 可以在这里输出上下文中的关键信息
-                if context and 'transformed_features' in context:
-                    print(f"  转换特性: {context['transformed_features']}")
-        
+            if context and 'transformed_features' in context:
+                self.logger.debug(f"  转换特性: {context['transformed_features']}")
+
         return result
     
     def set_debug(self, enabled: bool = True) -> 'MutatorChain':
-        """设置调试模式"""
-        self.debug_mode = enabled
+        self.logger.setLevel(logging.DEBUG if enabled else logging.INFO)
         return self
     
     def reset(self) -> 'MutatorChain':
-        """重置转换链，清除所有已注册的转换器"""
         self.mutators.clear()
         return self
     

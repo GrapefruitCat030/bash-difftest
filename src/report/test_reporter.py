@@ -203,7 +203,7 @@ class TestReporter:
         file_path = self.output_dir / filename
         
         with open(file_path, "w") as f:
-            f.write(f"Shell Metamorphic Testing Report\n")
+            f.write(f"Shell Metamorphic Differential Testing Report\n")
             f.write(f"Generated: {report['timestamp']}\n")
             f.write(f"\n== Summary ==\n")
             f.write(f"Total tests: {report['summary']['total_tests']}\n")

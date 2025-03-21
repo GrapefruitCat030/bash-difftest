@@ -1,5 +1,5 @@
 """
-Test reporting package for Shell Metamorphic Testing Framework
+Test reporting package for Shell Metamorphic Differential Testing Framework
 """
 
 from .test_reporter import TestReporter

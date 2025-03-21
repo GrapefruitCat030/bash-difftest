@@ -1,5 +1,5 @@
 """
-Mutators package for Shell Metamorphic Testing Framework
+Mutators package for Shell Metamorphic Differential Testing Framework
 """
 
 from .array                 import ArrayMutator

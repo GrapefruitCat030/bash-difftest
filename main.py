@@ -10,12 +10,16 @@ warnings.filterwarnings("ignore", category=FutureWarning, module="tree_sitter")
 import argparse
 import logging
 import sys
+import pkgutil
+import importlib
+import inspect
+import traceback
 from pathlib import Path
 from typing import Dict, Any
 
 from src.mutator              import MutatorGenerator
 from src.mutator              import MutatorValidator 
-from src.mutation_chain       import MutationChain
+from src.mutation_chain       import MutatorChain
 from src.report               import TestReporter
 from src.differential_testing import DifferentialTester
 from src.utils                import load_config
@@ -41,6 +45,19 @@ def parse_args():
     parser.add_argument("--config",     type=str, default="configs/conf.json",help="Path to configuration file")
     parser.add_argument("--features",   type=str, nargs="+",                  help="Specific shell features to process (for prepare mode)")
     return parser.parse_args()
+
+
+def register_all_mutators(chain: MutatorChain) -> MutatorChain:
+    from src.mutation_chain import mutators
+    from src.mutation_chain import BaseMutator
+
+    for _, module_name, _ in pkgutil.iter_modules(mutators.__path__, mutators.__name__ + "."):
+        module = importlib.import_module(module_name)
+        for name, obj in inspect.getmembers(module, inspect.isclass):
+            # 判断是否是BaseMutator的子类
+            if issubclass(obj, BaseMutator) and obj != BaseMutator:
+                chain.register(obj())
+    return chain
 
 
 def prepare_mutators(config: Dict[str, Any]):
@@ -106,14 +123,18 @@ def run_difftest(config):
     logger = logging.getLogger("differential-testing")
     logger.info("Starting differential testing phase")
     
-    # Initialize components
-    mutation_chain = MutationChain(config)
+    # init mutator chain
+    mutation_chain = MutatorChain()
+    register_all_mutators(mutation_chain)
+    mutation_chain.set_debug()
+
+    # init differential tester and test reporter
     diffTester = DifferentialTester(
         bash_path=config.get("bash_path"),
-        posix_path=config("posix_path"),
+        posix_path=config.get("posix_path"),
         timeout=config.get("timeout", 10)
     )
-    report_dir = config.get("results")("reports")
+    report_dir = config.get("results").get("reports")
     reporter = TestReporter(report_dir)
 
     # Get all test seed files
@@ -129,8 +150,9 @@ def run_difftest(config):
         
         # Apply mutation chain to generate equivalent POSIX shell code
         try:
-            posix_code = mutation_chain.convert(seed_file)
-            posix_code_dir = config.get("results")("posix_code")
+            bash_code = seed_file.read_text()
+            posix_code = mutation_chain.transform(bash_code)
+            posix_code_dir = config.get("results").get("posix_code")
             posix_file = Path(posix_code_dir) / f"{seed_file.stem}2posix.sh"
             posix_file.write_text(posix_code)
             
@@ -145,7 +167,8 @@ def run_difftest(config):
             logger.info(f"Test result for {seed_file.name}: {result_status}")
         
         except Exception as e:
-            logger.error(f"Error processing {seed_file}: {str(e)}")
+            err_stack = traceback.format_exc()
+            logger.error(f"Error processing {seed_file}: {str(e)}\n{err_stack}")
             results.append({
                 "seed": str(seed_file),
                 "error": str(e)
