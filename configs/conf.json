@@ -24,13 +24,13 @@
         "reports": "results/reports"
     },
     "shell_sourcecode_path": "shell",
-    "bash_path": "shell/bin/bash",
-    "posix_path": "shell/bin/sh",
+    "bash_path": "shell/bash-5.2/bash",
+    "posix_path": "shell/dash-0.5.11/dash",
     "timeout": 5,
     "validation": {
         "validate_examples_dir": "corpus/examples",
-        "bash_path": "bin/bash",
-        "posix_path": "bin/sh",
+        "bash_path": "shell/bash-5.2/bash",
+        "posix_path": "shell/dash-0.5.11/dash",
         "max_validation_attempts": 3,
         "timeout": 5
     }

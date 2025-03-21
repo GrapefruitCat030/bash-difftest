@@ -19,6 +19,7 @@ BACKUP_DIR := $(RESULTS_DIR)/backup
 # Configuration
 CONFIG_FILE := $(CONFIG_DIR)/conf.json
 
+
 # Timestamps for backups
 TIMESTAMP := $(shell date +%Y%m%d_%H%M%S)
 
@@ -78,8 +79,11 @@ test:
 		echo "$(RED)Error: No mutators found in $(MUTATORS_DIR). Run 'make mutators' first.$(NC)"; \
 		exit 1; \
 	fi
-	python main.py --mode testing --config $(CONFIG_FILE)
+	python main.py --mode testing
 	@echo "$(GREEN)Tests completed! See $(REPORT_DIR) for results.$(NC)"
+	@echo "$(GREEN)Generating the coverage report...$(NC)"
+	@bash scripts/coverage.sh
+	@echo "$(GREEN)Coverage report generated!$(NC)"
 
 # Clean up generated files
 clean: clean-reports clean-transformed clean-mutators clean-venv

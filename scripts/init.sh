@@ -18,18 +18,23 @@ echo "================= step 1: 检查配置目录...     ================="
 "$SCRIPTS_DIR/check_dir.sh"
 echo
 
-# 2. Python依赖
-echo "================= step 2: 安装Python依赖...   ================="
+# 2. 安装覆盖率工具
+echo "================= step 2: 安装覆盖率工具...   ================="
+"$SCRIPTS_DIR/setup_coverage.sh"
+echo
+
+# 3. Python依赖
+echo "================= step 3: 安装Python依赖...   ================="
 pip install -r "$PROJECT_ROOT/requirements.txt"
 echo
 
-# 3. 下载并编译shell
-echo "================= step 3: 下载并编译shell...  ================="
+# 4. 下载并编译shell
+echo "================= step 4: 下载并编译shell...  ================="
 "$SCRIPTS_DIR/setup_shells.sh"
 echo
 
-# 4. tree-sitter-bash
-echo "================= step 4: tree-sitter-bash...================="
+# 5. tree-sitter-bash
+echo "================= step 5: tree-sitter-bash...================="
 TREE_SITTER_DIR="$PROJECT_ROOT/tree-sitter-bash"
 if [ -d "$TREE_SITTER_DIR" ]; then
   echo "tree-sitter-bash has already been cloned. Pulling latest changes!"
