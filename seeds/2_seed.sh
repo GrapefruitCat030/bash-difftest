@@ -1,6 +1,6 @@
 arr1=(1 "b" 3)
 len=${#arr1[@]}
-for i in (seq 1 $len);
+for i in ${arr1[@]};
 do 
 	echo ${arr1[1]}
 done

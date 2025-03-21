@@ -21,7 +21,7 @@ class OpenAIProvider(BaseProvider):
             prompt (str): The input prompt for the model.
             
         Returns:
-            dict: The response object from the OpenAI API.
+            ChatCompletion: The response from the OpenAI API.
             
         Raises:
             OpenAIError: If the API request fails.
@@ -55,7 +55,7 @@ class OpenAIProvider(BaseProvider):
         Validate the OpenAI API response and extract the generated text.
         
         Args:
-            response (dict): The response from the OpenAI API.
+            response (Dict): The response from the OpenAI API.
             
         Returns:
             str: The generated text content.

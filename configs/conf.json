@@ -23,13 +23,14 @@
         "posix_code": "results/posix_code",
         "reports": "results/reports"
     },
-    "bash_path": "/bin/bash",
-    "posix_path": "/bin/sh",
+    "shell_sourcecode_path": "shell",
+    "bash_path": "shell/bin/bash",
+    "posix_path": "shell/bin/sh",
     "timeout": 5,
     "validation": {
         "validate_examples_dir": "corpus/examples",
-        "bash_path": "/bin/bash",
-        "posix_path": "/bin/sh",
+        "bash_path": "bin/bash",
+        "posix_path": "bin/sh",
         "max_validation_attempts": 3,
         "timeout": 5
     }

@@ -5,7 +5,6 @@ results/posix_code/*.sh
 results/reports/*.txt
 results/reports/*.json
 
-init.sh
 tmp/
 TODO.md
 *.log

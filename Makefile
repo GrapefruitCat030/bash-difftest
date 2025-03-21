@@ -13,6 +13,7 @@ CONFIG_DIR := configs
 CORPUS_DIR := corpus
 MUTATORS_DIR := $(SRC_DIR)/mutation_chain/mutators
 REPORT_DIR := $(RESULTS_DIR)/reports
+TRANRES_DIR := $(RESULTS_DIR)/posix_code
 BACKUP_DIR := $(RESULTS_DIR)/backup
 
 # Configuration
@@ -46,9 +47,7 @@ help:
 # Initialize the project
 init: venv
 	@echo "$(GREEN)Initializing project...$(NC)"
-	$(PIP) install -r requirements.txt
-	@mkdir -p $(RESULTS_DIR) $(MUTATORS_DIR) $(REPORT_DIR) $(BACKUP_DIR)
-	@echo "$(GREEN)Project initialized successfully!$(NC)"
+    @bash scripts/init.sh
 
 # Create virtual environment
 venv:
@@ -83,18 +82,19 @@ test:
 	@echo "$(GREEN)Tests completed! See $(REPORT_DIR) for results.$(NC)"
 
 # Clean up generated files
-clean: clean-reports clean-mutators
-	@echo "$(GREEN)Cleaning up all generated files...$(NC)"
-	@rm -rf $(RESULTS_DIR)/*
-	@mkdir -p $(MUTATORS_DIR) $(REPORT_DIR) $(BACKUP_DIR)
-	@echo "$(GREEN)Cleanup complete.$(NC)"
+clean: clean-reports clean-transformed clean-mutators clean-venv
 
 # Clean up test reports
 clean-reports:
 	@echo "$(GREEN)Cleaning up test reports...$(NC)"
-	@rm -rf $(REPORT_DIR)/*
-	@mkdir -p $(REPORT_DIR)
+	@rm $(REPORT_DIR)/{*.txt,*.json}
 	@echo "$(GREEN)Test reports cleaned.$(NC)"
+
+# Clean up transformed results
+clean-transformed:
+	@echo "$(GREEN)Cleaning up transformed results...$(NC)"
+	@rm $(TRANRES_DIR)/*.sh
+	@echo "$(GREEN)Transformed results cleaned.$(NC)"
 
 # Clean up mutators
 clean-mutators:
@@ -126,41 +126,4 @@ clean-venv:
 		echo "$(YELLOW)Virtual environment deletion cancelled.$(NC)"; \
 	fi
 
-# Run a specific feature
-feature:
-	@echo "$(YELLOW)Please enter the feature name to process:$(NC)"
-	@read feature_name; \
-	if [ -z "$$feature_name" ]; then \
-		echo "$(RED)Error: Feature name cannot be empty$(NC)"; \
-		exit 1; \
-	fi; \
-	$(PYTHON_VENV) main.py --mode prepare --config $(CONFIG_FILE) --features $$feature_name
-	@echo "$(GREEN)Feature '$$feature_name' processing completed!$(NC)"
 
-# Quick test with a single seed file
-quicktest:
-	@echo "$(YELLOW)Please enter the path to a single bash script to test:$(NC)"
-	@read test_file; \
-	if [ ! -f "$$test_file" ]; then \
-		echo "$(RED)Error: File '$$test_file' not found$(NC)"; \
-		exit 1; \
-	fi; \
-	temp_dir=$$(mktemp -d); \
-	cp "$$test_file" "$$temp_dir/"; \
-	$(PYTHON_VENV) main.py --mode test --config $(CONFIG_FILE) --test-seeds "$$temp_dir" --output-dir $(REPORT_DIR)/quicktest_$(TIMESTAMP); \
-	rm -rf "$$temp_dir"; \
-	echo "$(GREEN)Quick test completed! See $(REPORT_DIR)/quicktest_$(TIMESTAMP) for results.$(NC)"
-
-# View the last test report
-report:
-	@if [ ! -d "$(REPORT_DIR)" ] || [ -z "$$(ls -A $(REPORT_DIR) 2>/dev/null)" ]; then \
-		echo "$(RED)Error: No test reports found in $(REPORT_DIR)$(NC)"; \
-		exit 1; \
-	fi; \
-	latest_report=$$(find $(REPORT_DIR) -name "test_report_*.txt" -type f -printf "%T@ %p\n" | sort -nr | head -n1 | cut -d' ' -f2-); \
-	if [ -z "$$latest_report" ]; then \
-		echo "$(RED)Error: No text report files found$(NC)"; \
-		exit 1; \
-	fi; \
-	echo "$(GREEN)Displaying latest test report: $$latest_report$(NC)"; \
-	cat "$$latest_report" | less
