@@ -1,0 +1,1 @@
+cat none_existent_file.txt 2>&1 | sort 

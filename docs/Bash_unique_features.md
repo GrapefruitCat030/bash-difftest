@@ -45,9 +45,13 @@ Bash Features
 - 索引数组支持（POSIX不支持）
 - 关联数组支持（即哈希表键值对）
 - 复杂的数组操作（切片、连接等）
+- 数组操作：
+  - 切片：${array[@]:start:length}。
+  - 连接：${array[@]}。
+  - 获取数组长度：${#array[@]}。
 
 ## 6.8 The Directory Stack
 
 - 目录栈
 - `pushd`、`popd`、`dirs`命令
-- 目录栈操作与导航
+- 波浪号扩展：支持~+n和~-n访问目录栈中的目录。
