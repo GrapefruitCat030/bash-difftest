@@ -124,12 +124,14 @@ class ProcessSubstitutionMutator(BaseMutator):
         # 处理每个进程替换节点
         command_groups = {}
         pipeline_groups = {}  # 跟踪pipeline节点
+        redirected_statement_groups = {}  # 跟踪重定向语句节点
         
         for ps_node in process_subst_nodes:
-            # 查找command和pipeline节点
+            # 查找command、pipeline和redirected_statement节点
             command_node = self._find_parent_command(ps_node)
             pipeline_node = self._find_parent_pipeline(ps_node)
-            
+            redirected_statement_node = self._find_parent_redirected_statement(ps_node)
+
             if not command_node:
                 continue
             
@@ -143,6 +145,17 @@ class ProcessSubstitutionMutator(BaseMutator):
                     }
                 pipeline_groups[pipeline_node.id]['commands'].add(command_node.id)
                 pipeline_groups[pipeline_node.id]['process_substs'].append(ps_node)
+
+            # 如果该命令属于redirected_statement，将所有相关信息存储起来
+            if redirected_statement_node:
+                if redirected_statement_node.id not in redirected_statement_groups:
+                    redirected_statement_groups[redirected_statement_node.id] = {
+                        'node': redirected_statement_node,
+                        'commands': set(),  # 存储重定向语句中的所有命令节点
+                        'process_substs': []
+                    }
+                redirected_statement_groups[redirected_statement_node.id]['commands'].add(command_node.id)
+                redirected_statement_groups[redirected_statement_node.id]['process_substs'].append(ps_node)
             
             # 同时也存储每个command的信息
             if command_node.id not in command_groups:
@@ -150,14 +163,15 @@ class ProcessSubstitutionMutator(BaseMutator):
                     'node': command_node,
                     'process_substs': [],
                     'tmp_vars': [],
-                    'pipeline_id': pipeline_node.id if pipeline_node else None
+                    'pipeline_id': pipeline_node.id if pipeline_node else None,
+                    'redirected_statement_id': redirected_statement_node.id if redirected_statement_node else None
                 }
             command_groups[command_node.id]['process_substs'].append(ps_node)
-        
-        # 先处理不在pipeline中的普通命令
+
+        # 处理不在pipeline和重定向语句中的普通命令
         for cmd_id, group in command_groups.items():
-            # 如果命令属于pipeline，稍后一起处理
-            if group['pipeline_id'] is not None:
+            # 如果命令属于pipeline或redirected_statement，稍后一起处理
+            if group['pipeline_id'] is not None or group['redirected_statement_id'] is not None:
                 continue
                 
             cmd_node = group['node']
@@ -233,6 +247,44 @@ class ProcessSubstitutionMutator(BaseMutator):
             if suffix_code:
                 patches.append((pipeline_node.end_byte, pipeline_node.end_byte, suffix_code))
         
+        # 处理redirected_statement
+        for rs_id, rs_group in redirected_statement_groups.items():
+            rs_node = rs_group['node']
+            redirected_text = source_code[rs_node.start_byte:rs_node.end_byte]
+            
+            prefix_code = ""
+            # 临时文件声明和创建在重定向语句前面
+            for ps_node in rs_group['process_substs']:
+                command_content = ""
+                for child in ps_node.children:
+                    if child.type == "command":
+                        command_content = child.text.decode('utf8')
+                        break
+                
+                if not command_content:
+                    continue
+                
+                context['tmp_counter'] += 1
+                tmp_var = f"tmp{context['tmp_counter']}"
+                
+                prefix_code += f"{tmp_var}=$(mktemp)\n"
+                prefix_code += f"{command_content} > \"${tmp_var}\"\n"
+                # 替换进程替换为临时文件
+                patches.append((ps_node.start_byte, ps_node.end_byte, f"\"${tmp_var}\""))
+                
+            # 添加临时文件清理代码
+            suffix_code = "\n"
+            for ps_node in rs_group['process_substs']:
+                context['tmp_counter'] += 1
+                tmp_var = f"tmp{context['tmp_counter'] - len(rs_group['process_substs'])}"
+                suffix_code += f"rm -f \"${tmp_var}\"\n"
+            
+            # 添加前缀和后缀代码
+            if prefix_code:
+                patches.append((rs_node.start_byte, rs_node.start_byte, prefix_code))
+            if suffix_code:
+                patches.append((rs_node.end_byte, rs_node.end_byte, suffix_code))
+
         # 应用补丁并返回结果
         return self.apply_patches(source_code, patches), context
     
@@ -254,3 +306,11 @@ class ProcessSubstitutionMutator(BaseMutator):
             current = current.parent
         return None
 
+    def _find_parent_redirected_statement(self, node: tree_sitter.Node) -> Optional[tree_sitter.Node]:
+        """查找包含进程替换的重定向命令节点"""
+        current = node
+        while current.parent:
+            if current.type == "redirected_statement":
+                return current
+            current = current.parent
+        return None

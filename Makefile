@@ -48,7 +48,7 @@ help:
 # Initialize the project
 init: venv
 	@echo "$(GREEN)Initializing project...$(NC)"
-    @bash scripts/init.sh
+	@bash scripts/init.sh
 
 # Create virtual environment
 venv:
