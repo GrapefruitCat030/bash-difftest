@@ -1,4 +1,5 @@
-| Bash Here Strings 语法 | POSIX Shell 实现方法（here documents）                       |
-| :-------------------- | :----------------------------------------------------------- |
-| `command <<< word`    | 1.使用临时变量存储word 2.在 Here-Document 中引用该变量 `command << EOF \n` `$word \n` `EOF \n` |
-
+| Bash Here Strings 语法                 | POSIX Shell 等效实现方法（Here documents）           | 关键说明                                                     |
+| :------------------------------------- | :--------------------------------------------------- | :----------------------------------------------------------- |
+| `cmd <<< 【string】`                   | `printf "%s\n" 【string】 | cmd`                     | `string` 包括 `tilde expansion, parameter and variable expansion, command substitution, arithmetic expansion, and quote removal`。但无论如何，都直接以printf 字符串格式化输出，使用 管道 与原命令拼接。 |
+| `cmd1 <<< 【string】| cmd2 | cmd3 ...` | `printf "%s\n" 【string】 | cmd1 | cmd2 | cmd3 ... ` | 对于原 cmd1 后面跟着【管道】的情况，只需 替换 {cmd1 <<< 【string】}部分  为 {printf "%s\n" 【string】 \| cmd1 } 即可。 |
+| `cmd <<< 【string】 2>&1 > tmp.txt `   | `printf "%s\n" 【string】 | cmd 2>&1 > tmp.txt`      | 对于原 cmd 后面跟着【重定向】的情况，只需 替换 {cmd1 <<< 【string】}部分  为 {printf "%s\n" 【string】\| cmd } 即可。 |
