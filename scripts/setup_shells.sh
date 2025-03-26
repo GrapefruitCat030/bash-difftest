@@ -33,23 +33,18 @@ else
   echo "bash-$BASH_VERSION has already been downloaded and compiled. Skip."
 fi
 
-# 下载并编译dash (作为POSIX shell)
-if [ ! -d "$SHELL_DIR/dash-$DASH_VERSION" ]; then
-  echo "downloading sources code: dash-$DASH_VERSION..."
-  wget "http://gondor.apana.org.au/~herbert/dash/files/dash-$DASH_VERSION.tar.gz"
-  tar -xzf "dash-$DASH_VERSION.tar.gz"
-  rm "dash-$DASH_VERSION.tar.gz"
-  
+# 当前已经准备好 dash 的源码, 修改了automake配置文件，使得dash支持gcov
+if [ ! -e "$SHELL_DIR/dash-$DASH_VERSION/src/dash" ]; then
   echo "config and compile [dash]"
   cd "dash-$DASH_VERSION"
-  
-  # 配置dash，启用gcov
-  CFLAGS="-fprofile-arcs -ftest-coverage -O0 -g" LDFLAGS="-lgcov" ./configure --prefix="$SHELL_DIR/dash-$DASH_VERSION" 
-  
-  make -j$(nproc)
+
+  ./autogen.sh
+  ./configure --enable-gcov # 启用gcov
+  make -j$(nproc) # cpu core for parallel make
   cd "$SHELL_DIR"
 else
   echo "dash-$DASH_VERSION has already been downloaded and compiled. Skip."
 fi
+
 
 echo "=== 安装完成 ==="

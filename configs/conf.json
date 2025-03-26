@@ -25,12 +25,12 @@
     },
     "shell_sourcecode_path": "shell",
     "bash_path": "shell/bash-5.2/bash",
-    "posix_path": "shell/dash-0.5.11/dash",
+    "posix_path": "shell/dash-0.5.12/src/dash",
     "timeout": 5,
     "validation": {
         "validate_examples_dir": "corpus/examples",
         "bash_path": "shell/bash-5.2/bash",
-        "posix_path": "shell/dash-0.5.11/dash",
+        "posix_path": "shell/dash-0.5.12/src/dash",
         "max_validation_attempts": 3,
         "timeout": 5
     }
