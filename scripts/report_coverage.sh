@@ -24,7 +24,7 @@ echo "bash coverage report has been generated. see $SHELL_DIR/bash_coverage_repo
 
 # 生成dash覆盖率报告
 echo "gen [dash] coverage report..."
-cd "$SHELL_DIR/dash-$DASH_VERSION"
+cd "$SHELL_DIR/dash-$DASH_VERSION/src"
 
 gcov *.c
 lcov --capture --directory . --output-file dash_coverage.info --no-external

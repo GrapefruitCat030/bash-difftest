@@ -33,6 +33,12 @@ else
   echo "bash-$BASH_VERSION has already been downloaded and compiled. Skip."
 fi
 
+# 检查 automake 是否安装
+if ! command -v automake &> /dev/null; then
+  echo "automake is not installed. Installing..."
+  sudo apt install automake
+fi
+
 # 当前已经准备好 dash 的源码, 修改了automake配置文件，使得dash支持gcov
 if [ ! -e "$SHELL_DIR/dash-$DASH_VERSION/src/dash" ]; then
   echo "config and compile [dash]"
