@@ -69,7 +69,7 @@ mutators: init
 		cp -R $(MUTATORS_DIR)/* $(BACKUP_DIR)/mutators_$(TIMESTAMP)/; \
 	fi
 	@echo "$(GREEN)Running mutator generation...$(NC)"
-	$(PYTHON_VENV) main.py --mode prepare --config $(CONFIG_FILE)
+	$(PYTHON_VENV) main.py --mode prepare 
 	@echo "$(GREEN)Mutators generated successfully!$(NC)"
 
 # Run tests

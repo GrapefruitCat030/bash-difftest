@@ -11,6 +11,7 @@ from .brace_expansion       import BraceExpansionMutator
 from .here_strings          import HereStringsMutator
 from .local_variables       import LocalVariablesMutator
 from .conditional_expressions import ConditionalExpressionsMutator 
+from .directory_stack       import DirectoryStackMutator
 
 __all__ = [
     "ArrayMutator", 
@@ -21,5 +22,6 @@ __all__ = [
     "BraceExpansionMutator",
     "HereStringsMutator",
     "LocalVariablesMutator",
-    "ConditionalExpressionsMutator"
+    "ConditionalExpressionsMutator",
+    "DirectoryStackMutator"
 ]

@@ -15,7 +15,15 @@
     "corpus_path": "corpus",
     "features": [
         "Array",
-        "ProcessSubstitution"
+        "ProcessSubstitution",
+        "Pipeline",
+        "Functions",
+        "Redirections",
+        "BraceExpansion",
+        "HereStrings",
+        "LocalVariables",
+        "ConditionalExpressions",
+        "DirectoryStack"
     ],
     "seeds": "seeds",
     "results": {
