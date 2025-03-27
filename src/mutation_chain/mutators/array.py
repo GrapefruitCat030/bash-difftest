@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, List
 
 class ArrayMutator(BaseMutator):
     # 定义转换器基本信息
-    NAME = "array_transformer"
+    NAME = "array_mutator"
     DESCRIPTION = "将Bash Array 转换为 POSIX兼容语法"
     TARGET_FEATURES = {"Array"}
     
