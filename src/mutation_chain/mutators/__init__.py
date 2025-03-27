@@ -12,6 +12,7 @@ from .here_strings          import HereStringsMutator
 from .local_variables       import LocalVariablesMutator
 from .conditional_expressions import ConditionalExpressionsMutator 
 from .directory_stack       import DirectoryStackMutator
+from .arithmetic_expansion   import ArithmeticExpansionMutator
 
 __all__ = [
     "ArrayMutator", 
@@ -23,5 +24,6 @@ __all__ = [
     "HereStringsMutator",
     "LocalVariablesMutator",
     "ConditionalExpressionsMutator",
-    "DirectoryStackMutator"
+    "DirectoryStackMutator",
+    "ArithmeticExpansionMutator"
 ]

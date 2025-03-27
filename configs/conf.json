@@ -23,7 +23,8 @@
         "HereStrings",
         "LocalVariables",
         "ConditionalExpressions",
-        "DirectoryStack"
+        "DirectoryStack",
+        "ArithmeticExpansion"
     ],
     "seeds": "seeds",
     "results": {
