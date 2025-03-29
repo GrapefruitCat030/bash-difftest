@@ -3,8 +3,6 @@ Differential Testing module for comparing bash and POSIX shell script behavior
 """
 
 import logging
-import os
-import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
@@ -17,20 +15,20 @@ class DifferentialTester:
     Performs differential testing between bash and POSIX shell scripts
     """
     
-    def __init__(self, bash_path: str = "/bin/bash", posix_path: str = "/bin/sh", timeout: int = 10):
+    def __init__(self, bash_binpath: str = "/bin/bash", posix_binpath: str = "/bin/sh", timeout: int = 10):
         """
         Initialize the differential tester
         
         Args:
-            bash_path: Path to bash executable
-            posix_path: Path to POSIX shell executable
+            bash_binpath: Path to bash executable
+            posix_binpath: Path to POSIX shell executable
             timeout: Timeout for script execution in seconds
         """
-        self.bash_path = bash_path
-        self.posix_path = posix_path
+        self.bash_binpath = bash_binpath
+        self.posix_binpath = posix_binpath
         self.timeout = timeout
         
-    def test(self, bash_file: str, posix_file: str, test_inputs: Optional[List[str]] = None) -> Dict[str, Any]:
+    def test(self, bash_script: Path, posix_script: Path, test_inputs: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Test a bash script against its POSIX equivalent
         
@@ -40,23 +38,14 @@ class DifferentialTester:
             test_inputs: List of input strings to provide to the scripts
             
         Returns:
-            Dictionary containing test results
+            a dictionary with test results:
+            - seed_name: Name of the test seed
+            - test_count: int
+            - pass_num: Number of tests that passed
+            - details: List of dictionaries with detail for each test input
         """
-        logger.info(f"Testing {bash_file} against {posix_file}")
         
-        bash_script = Path(bash_file)  # e.g., "test.sh"
-        posix_script = Path(posix_file)
-        
-        if not bash_script.exists():
-            raise FileNotFoundError(f"Bash file not found: {bash_file}")
-        if not posix_script.exists():
-            raise FileNotFoundError(f"POSIX file not found: {posix_file}")
-            
-        # Make sure scripts are executable
-        bash_script.chmod(0o755)
-        posix_script.chmod(0o755)
-        
-        # If no test inputs provided, run with empty input
+        # if no test inputs provided, run with empty input
         if test_inputs is None:
             test_inputs = [""]
             
@@ -69,14 +58,14 @@ class DifferentialTester:
             
             # Execute bash script
             bash_result = execute_shell_command(
-                [self.bash_path, str(bash_script)],
+                [self.bash_binpath, str(bash_script)],
                 input_text=input_data,
                 timeout=self.timeout
             )
             
             # Execute posix script
             posix_result = execute_shell_command(
-                [self.posix_path, str(posix_script)],
+                [self.posix_binpath, str(posix_script)],
                 input_text=input_data,
                 timeout=self.timeout
             )
@@ -102,40 +91,9 @@ class DifferentialTester:
             
             results.append(result)
             
-        # Determine overall equivalence
-        all_equivalent = all(r["equivalent"] for r in results)
-        
         return {
-            "bash_file": str(bash_script),
-            "posix_file": str(posix_script),
+            "seed_name": bash_script.name,
             "test_count": len(results),
-            "equivalent": all_equivalent,
+            "pass_num": sum(1 for r in results if r["equivalent"]),
             "details": results
         }
-        
-    def batch_test(self, test_cases: List[Dict[str, str]]) -> List[Dict[str, Any]]:
-        """
-        Run multiple differential tests
-        
-        Args:
-            test_cases: List of test cases, each with 'bash_file' and 'posix_file' keys
-            
-        Returns:
-            List of test results
-        """
-        results = []
-        
-        for case in test_cases:
-            try:
-                result = self.test(case["bash_file"], case["posix_file"])
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Error testing {case['bash_file']}: {str(e)}")
-                results.append({
-                    "bash_file": case["bash_file"],
-                    "posix_file": case["posix_file"],
-                    "error": str(e),
-                    "equivalent": False
-                })
-                
-        return results

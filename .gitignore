@@ -1,5 +1,6 @@
 tree-sitter-bash/
 build/
+.vscode/
 
 results/posix_code/*.sh
 results/reports/*.txt

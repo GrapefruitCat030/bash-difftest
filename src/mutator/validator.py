@@ -24,12 +24,12 @@ class MutatorValidator:
         Args:
             config: Configuration dictionary
                 - validate_examples_dir: Directory containing test examples
-                - bash_path: Path to bash executable
-                - posix_path: Path to POSIX shell executable
+                - bash_binpath: Path to bash executable
+                - posix_binpath: Path to POSIX shell executable
         """
         self.validate_examples_dir = Path(config.get("validate_examples_dir"))
-        self.bash_path = config.get("bash_path", "/bin/bash")
-        self.posix_path = config.get("posix_path", "/bin/sh")
+        self.bash_binpath = config.get("bash_binpath", "/bin/bash")
+        self.posix_binpath = config.get("posix_binpath", "/bin/sh")
         self.timeout = config.get("timeout", 5)
         
     def validate(self, mutator_code: str, feature: str) -> Tuple[bool, str]:
@@ -129,7 +129,7 @@ class MutatorValidator:
         try:
             posix_code = module.transform(bash_code)
             # Check for syntactic correctness of the output
-            posix_valid, posix_feedback = self._check_shell_syntax(posix_code, self.posix_path)
+            posix_valid, posix_feedback = self._check_shell_syntax(posix_code, self.posix_binpath)
             if not posix_valid:
                 return False, f"Generated POSIX code has syntax error: {posix_feedback}"
             

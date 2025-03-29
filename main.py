@@ -14,6 +14,7 @@ import pkgutil
 import importlib
 import inspect
 import traceback
+import signal
 from pathlib import Path
 from typing import Dict, Any
 
@@ -22,7 +23,7 @@ from src.mutator              import MutatorValidator
 from src.mutation_chain       import MutatorChain
 from src.report               import TestReporter
 from src.differential_testing import DifferentialTester
-from src.utils                import load_config
+import src.utils as utils
 
 
 def setup_logger():
@@ -58,6 +59,14 @@ def register_all_mutators(chain: MutatorChain) -> MutatorChain:
             if issubclass(obj, BaseMutator) and obj != BaseMutator:
                 chain.register(obj())
     return chain
+
+
+class GracefulExit(Exception):
+    pass
+
+# TODO: add a detect thread to control the memory and disk usage, interrupt the process if it exceeds the limit
+def graceful_exit_handler(signum, frame):
+    raise GracefulExit()
 
 
 def prepare_mutators(config: Dict[str, Any]):
@@ -130,61 +139,86 @@ def run_difftest(config):
 
     # init differential tester and test reporter
     diffTester = DifferentialTester(
-        bash_path=config.get("bash_path"),
-        posix_path=config.get("posix_path"),
+        bash_binpath=config.get("bash_binpath"),
+        posix_binpath=config.get("posix_binpath"),
         timeout=config.get("timeout", 10)
     )
     report_dir = config.get("results").get("reports")
     reporter = TestReporter(report_dir)
 
-    # Get all test seed files
-    seed_dir = config.get("seeds")
-    seed_files = list(Path(seed_dir).glob("*.sh"))
-    logger.info(f"Found {len(seed_files)} test seed files")
     
-    results = []
-    
-    # Process each test seed
-    for seed_file in seed_files:
-        logger.info(f"Processing test seed: {seed_file}")
-        
-        # Apply mutation chain to generate equivalent POSIX shell code
-        try:
-            bash_code = seed_file.read_text()
-            posix_code = mutation_chain.transform(bash_code)
-            posix_code_dir = config.get("results").get("posix_code")
-            posix_file = Path(posix_code_dir) / f"{seed_file.stem}2posix.sh"
-            posix_file.write_text(posix_code)
+    # infinite loop for testing
+    round_num = 0 
+    signal.signal(signal.SIGINT, graceful_exit_handler) 
+
+    try:
+        while True:
+            round_num += 1
+            logger.info(f"Staring Round [{round_num}] .")
+
+            # generate test seeds
+            base_seed_dir = config.get("seeds")
+            round_seed_dir = Path(base_seed_dir) / f"round_{round_num}"
+            round_seed_dir.mkdir(parents=True, exist_ok=True)
+
+            utils.generate_seed_files(round_seed_dir, 10, 100)
+
+            # get all test seed files
+            seed_files = list(Path(round_seed_dir).glob("*.sh"))
             
-            # Run differential test
-            test_result = diffTester.test(str(seed_file), str(posix_file))
-            results.append({
-                "seed": str(seed_file),
-                "posix": str(posix_file),
-                "result": test_result
-            })
-            result_status = (GREEN + "PASS" + RESET) if test_result["equivalent"] else (RED + "FAIL" + RESET)
-            logger.info(f"Test result for {seed_file.name}: {result_status}")
-        
-        except Exception as e:
-            err_stack = traceback.format_exc()
-            logger.error(f"Error processing {seed_file}: {str(e)}\n{err_stack}")
-            results.append({
-                "seed": str(seed_file),
-                "error": str(e)
-            })
+            results = []
+            
+            # process each test seed file
+            for seed_file in seed_files:
+                
+                # apply mutation chain to generate equivalent POSIX shell code
+                try:
+                    bash_code = seed_file.read_text()
+                    posix_code = mutation_chain.transform(bash_code)
+                    posix_code_dir = Path(config.get("results").get("posix_code")) / f"round_{round_num}"
+                    posix_code_dir.mkdir(parents=True, exist_ok=True)
+                    posix_file = posix_code_dir / f"{seed_file.stem}_posix.sh"
+                    posix_file.write_text(posix_code)
+                    
+                    # Run differential test
+                    test_result = diffTester.test(seed_file, posix_file)
+                    results.append(test_result)
+                
+                except Exception as e:
+                    err_stack = traceback.format_exc()
+                    logger.error(f"Error processing {seed_file}: {str(e)}\n{err_stack}")
+                    # TODO: hold the errors
+                    results.append({
+                        "seed_name": str(seed_file),
+                        "error": str(e)
+                    })
 
-    # Generate and save test reports with all reporting logic encapsulated in the reporter
-    _, summary = reporter.generate_and_save(
-        results=results,
-        config=config,
-        seed_files=seed_files
-    )
-
-    logger.info(f"Testing completed. Results saved to {report_dir}")
+            # generate and save test reports in this round
+            round_summary = reporter.generate_round_report(round_num, results, config, seed_files)
+            
+            logger.info(f"End Round [{round_num}]. Round summary: Tests: {round_summary['total_tests']}, " 
+                        f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, ")
+            logger.info(f"Report saved to {report_dir}/round_{round_num}")
     
-    # Return summary for command line output
-    return summary
+    except GracefulExit:
+        logger.info("Graceful exit triggered. generate summary report and exit.")
+        if round_num > 0:
+            saved_files, summary = reporter.generate_summary_report(config)
+            logger.info(f"Testing complete. Summary:")
+            logger.info(f"Saved files: {saved_files}")
+            logger.info(f"Total rounds: {summary['total_rounds']}")
+            logger.info(f"Total tests:  {summary['total_tests']}")
+            logger.info(f"Total passed: {summary['total_passed']}")
+            logger.info(f"Total failed: {summary['total_failed']}")
+            logger.info(f"Total errors: {summary['total_errors']}")
+            logger.info(f"Success rate: {summary['success_rate']:.2f}%")
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {str(e)}")
+        traceback.print_exc()
+    finally:
+        # do nothing
+        pass
 
 
 if __name__ == "__main__":
@@ -192,7 +226,7 @@ if __name__ == "__main__":
     logger.info("Starting Shell Metamorphic Differential Testing Framework")
     
     args = parse_args()
-    config = load_config(args.config)
+    config = utils.load_config(args.config)
 
     switcher = {
         "prepare": prepare_mutators,
