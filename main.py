@@ -152,6 +152,7 @@ def run_difftest(config):
     signal.signal(signal.SIGINT, graceful_exit_handler) 
 
     try:
+        round_results = []
         while True:
             round_num += 1
             logger.info(f"Staring Round [{round_num}] .")
@@ -165,8 +166,6 @@ def run_difftest(config):
 
             # get all test seed files
             seed_files = list(Path(round_seed_dir).glob("*.sh"))
-            
-            results = []
             
             # process each test seed file
             for seed_file in seed_files:
@@ -182,36 +181,48 @@ def run_difftest(config):
                     
                     # Run differential test
                     test_result = diffTester.test(seed_file, posix_file)
-                    results.append(test_result)
+                    round_results.append(test_result)
                 
                 except Exception as e:
                     err_stack = traceback.format_exc()
                     logger.error(f"Error processing {seed_file}: {str(e)}\n{err_stack}")
                     # TODO: hold the errors
-                    results.append({
+                    round_results.append({
                         "seed_name": str(seed_file),
                         "error": str(e)
                     })
 
             # generate and save test reports in this round
-            round_summary = reporter.generate_round_report(round_num, results, config, seed_files)
-            
+            round_summary = reporter.generate_round_report(round_num, round_results)
             logger.info(f"End Round [{round_num}]. Round summary: Tests: {round_summary['total_tests']}, " 
                         f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, ")
             logger.info(f"Report saved to {report_dir}/round_{round_num}")
-    
+            
+            # clear round results
+            round_results.clear()
+
     except GracefulExit:
         logger.info("Graceful exit triggered. generate summary report and exit.")
-        if round_num > 0:
-            saved_files, summary = reporter.generate_summary_report(config)
-            logger.info(f"Testing complete. Summary:")
-            logger.info(f"Saved files: {saved_files}")
-            logger.info(f"Total rounds: {summary['total_rounds']}")
-            logger.info(f"Total tests:  {summary['total_tests']}")
-            logger.info(f"Total passed: {summary['total_passed']}")
-            logger.info(f"Total failed: {summary['total_failed']}")
-            logger.info(f"Total errors: {summary['total_errors']}")
-            logger.info(f"Success rate: {summary['success_rate']:.2f}%")
+        if round_num <= 0:
+            logger.info("No rounds completed. Exiting.")
+            return
+        # process the last round
+        if round_results:
+            round_summary = reporter.generate_round_report(round_num, round_results)
+            logger.info(f"End Round [{round_num}]. Round summary: Tests: {round_summary['total_tests']}, " 
+                        f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, ")
+            logger.info(f"Report saved to {report_dir}/round_{round_num}") 
+            round_results.clear()
+        # summarize all rounds 
+        saved_files, summary = reporter.generate_summary_report(config)
+        logger.info(f"Testing complete. Summary:")
+        logger.info(f"Saved files: {saved_files}")
+        logger.info(f"Total rounds: {summary['total_rounds']}")
+        logger.info(f"Total tests:  {summary['total_tests']}")
+        logger.info(f"Total passed: {summary['total_passed']}")
+        logger.info(f"Total failed: {summary['total_failed']}")
+        logger.info(f"Total errors: {summary['total_errors']}")
+        logger.info(f"Success rate: {summary['success_rate']:.2f}%")
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")

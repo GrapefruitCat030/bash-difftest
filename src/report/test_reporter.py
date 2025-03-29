@@ -117,7 +117,7 @@ class TestReporter:
             f.write(f"Total tests: {report['summary']['total_tests']}\n")
             f.write(f"Passed: {report['summary']['passed']}\n")
             f.write(f"Failed: {report['summary']['failed']}\n")
-            f.write(f"Errors: {report['summary']['errors']}\n")
+            # f.write(f"Errors: {report['summary']['errors']}\n")
             f.write(f"Success rate: {report['summary']['success_rate']}\n")
             
             f.write(f"\n== Failure Analysis ==\n")
@@ -135,22 +135,23 @@ class TestReporter:
                         f.write(f"{key}: {value}\n")
                     
             f.write(f"\n== Test Details ==\n")
-            for i, result in enumerate(report["details"]):
+            for i, result in enumerate(report["results_details"]):
                 f.write(f"\nTest {i+1}:\n")
-                if "seed" in result:
-                    f.write(f"  Seed file: {result['seed']}\n")
-                if "posix" in result:
-                    f.write(f"  POSIX file: {result['posix']}\n")
-                    
+                if "seed_name" in result:
+                    f.write(f"  Seed name: {result['seed_name']}\n")
+                # common or error 
                 if "error" in result:
                     f.write(f"  ERROR: {result['error']}\n")
-                elif "result" in result:
-                    status = "PASS" if result["result"].get("equivalent", False) else "FAIL"
+                else:
+                    pass_num = result.get("pass_num", 0)
+                    test_count = result.get("test_count", 0)
+
+                    status = "PASS" if pass_num == test_count else "FAIL"
                     f.write(f"  Status: {status}\n")
                     
-                    # Include limited details of failures to keep report readable
+                    # include limited details of failures to keep report readable
                     if status == "FAIL" and "details" in result["result"]:
-                        for detail in result["result"]["details"]:
+                        for detail in result["details"]:
                             if not detail.get("equivalent", True):
                                 f.write(f"  Failure details:\n")
                                 if not detail.get("stdout_match", True):
@@ -263,7 +264,6 @@ class TestReporter:
         )
         
         # update global summary
-        self.all_rounds_results.extend(round_results)
         summary = report["summary"]
         self.all_rounds_summary["rounds"] = max(self.all_rounds_summary["rounds"], round_num) # idiot code ^^
         self.all_rounds_summary["total_tests"] += summary["total_tests"]
