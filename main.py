@@ -158,7 +158,7 @@ def run_difftest(config):
             logger.info(f"Staring Round [{round_num}] .")
 
             # generate test seeds
-            base_seed_dir = config.get("seeds")
+            base_seed_dir = config.get("seeds_dir")
             round_seed_dir = Path(base_seed_dir) / f"round_{round_num}"
             round_seed_dir.mkdir(parents=True, exist_ok=True)
 

@@ -26,7 +26,8 @@
         "DirectoryStack",
         "ArithmeticExpansion"
     ],
-    "seeds": "seeds",
+    "seeds_dir": "seeds",
+    "seeds_generator_binpath": "tools/grammar_generator-bash",
     "results": {
         "mutators": "src/mutation_chain/mutators",
         "posix_code": "results/posix_code",
@@ -35,7 +36,6 @@
     "shell_sourcecode_path": "shell",
     "bash_binpath": "shell/bash-5.2/bash",
     "posix_binpath": "shell/dash-0.5.12/src/dash",
-    "seeds_generator_binpath": "tools/grammar_generator-bash",
     "timeout": 5,
     "validation": {
         "validate_examples_dir": "corpus/examples",

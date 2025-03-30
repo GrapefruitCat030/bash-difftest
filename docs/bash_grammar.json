@@ -45,8 +45,9 @@
     ],
     "<TEST_CMD>": [
         ["[[ ", "<TEST_EXPRESSION>", " ]]"],
-        ["(( ", "<ARITH_EXPR>", " ))"],
-        ["[ ", "<TEST_EXPRESSION>", " ]"]
+        ["[ ", "<TEST_EXPRESSION>", " ]"],
+        ["test ", "<TEST_EXPRESSION>"],
+        ["<ARITH_EXPANSION>"]
     ],
     "<TEST_EXPRESSION>": [
         ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
@@ -57,7 +58,8 @@
         ["-d", " ", "<FILENAME>"],
         ["-e", " ", "<FILENAME>"],
         ["-z", " ", "<STRING>"],
-        ["-n", " ", "<STRING>"]
+        ["-n", " ", "<STRING>"],
+        ["!", " ", "<TEST_EXPRESSION>"]
     ],
 
     "<DIRECTORY_STACK>": [
@@ -100,7 +102,7 @@
         ["<VARIABLE>", "+=", "<VALUE>"],
 
         ["<ARRAY_NAME>", "=", "( ", "<ARRAY_ITEMS>", " )"],
-        ["<ARRAY_NAME>", "[", "<NUMBER>", "]=", "<VALUE>"],          
+        ["<ARRAY_NAME>", "[", "<NUMBER>", "]=", "<ARRAY_VALUE>"],
         ["<ARRAY_NAME>", "+=", "( ", "<ARRAY_ITEMS>", " )"]          
     ],
     "<VALUE>": [
@@ -113,19 +115,44 @@
         ["${", "<ARRAY_NAME>", "[", "<NUMBER>", "]}"]  
     ],
     "<ARRAY_NAME>": [["<VARIABLE>"]],
-    "<ARRAY_ITEMS>": [["<VALUE>", " ", "<ARRAY_ITEMS>"], ["<VALUE>"]],
+    "<ARRAY_ITEMS>": [["<ARRAY_VALUE>", " ", "<ARRAY_ITEMS>"], ["<ARRAY_VALUE>"]],
+    "<ARRAY_VALUE>": [
+        ["<STRING>"],
+        ["<NUMBER>"],
+        ["<COMMAND_SUBST>"]
+    ],
+
     "<COMMAND_SUBST>": [
-        ["$(", "<STATEMENT_LIST>", ")"],
-        ["`", "<STATEMENT_LIST>", "`"]
+        ["$(", "<SUBST_STATEMENT_LIST>", ")"],
+        ["`", "<SUBST_STATEMENT_LIST>", "`"]
+    ],
+    "<SUBST_STATEMENT_LIST>": [
+        ["<SUBST_STATEMENT>", ";\n", "<SUBST_STATEMENT_LIST>"],
+        ["<SUBST_STATEMENT>", ";\n"]
+    ],
+    "<SUBST_STATEMENT>": [
+        ["<SIMPLE_CMD>"],
+        ["<VARIABLE>", "=", "<SIMPLE_VALUE>"],
+        ["<VARIABLE>", "+=", "<SIMPLE_VALUE>"]
+    ],
+    "<SIMPLE_VALUE>": [
+        ["<STRING>"],
+        ["<NUMBER>"]
     ],
 
     "<EXPRESSION>": [
         ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
         ["<NUMBER>", " ", "<ARITH_OP>", " ", "<NUMBER>"]
     ],
+    "<ARITH_EXPANSION>": [
+        ["$(( ", "<ARITH_EXPR>", " ))"],
+        ["(( ", "<ARITH_EXPR>", " ))"]
+    ],
     "<ARITH_EXPR>": [
         ["<NUMBER>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
-        ["<VARIABLE>", " ", "<ARITH_OP>", " ", "<NUMBER>"]
+        ["<VARIABLE>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
+        ["<NUMBER>"],
+        ["<VARIABLE>"]
     ],
     "<CONDITION>": [
         ["<TEST_CMD>"],
@@ -221,7 +248,6 @@
         ["echo"], ["printf"], ["read"],   
         ["true"], ["false"], ["test"],
         ["find"], ["diff"], ["cmp"], ["comm"], ["xargs"],
-        ["ping"], ["wget"], ["curl"], ["ssh"], ["scp"],
         ["date"], ["time"], ["who"], ["which"], ["type"], 
         ["clear"], ["du"], ["df"], ["free"]
     ]

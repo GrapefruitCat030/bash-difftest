@@ -1,5 +1,7 @@
 # Bash Features
 
+> See: https://www.gnu.org/software/bash/manual/bash.html#Major-Differences-From-The-Bourne-Shell
+
 ```
 Bash Features
   6.1 Invoking Bash
