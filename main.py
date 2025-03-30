@@ -162,7 +162,7 @@ def run_difftest(config):
             round_seed_dir = Path(base_seed_dir) / f"round_{round_num}"
             round_seed_dir.mkdir(parents=True, exist_ok=True)
 
-            utils.generate_seed_files(round_seed_dir, 10, 100)
+            utils.generate_seed_scripts(round_seed_dir, 10, 100)
 
             # get all test seed files
             seed_files = list(Path(round_seed_dir).glob("*.sh"))

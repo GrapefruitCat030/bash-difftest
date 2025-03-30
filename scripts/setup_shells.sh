@@ -3,7 +3,6 @@
 
 set -e  # 遇到错误立即退出
 
-# 获取项目根目录
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SHELL_DIR="$PROJECT_ROOT/shell"
 BASH_VERSION="5.2"

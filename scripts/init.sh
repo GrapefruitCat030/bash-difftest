@@ -46,5 +46,9 @@ else
   git clone https://github.com/tree-sitter/tree-sitter-bash.git "$TREE_SITTER_DIR"
 fi
 
+# 6. seeds generator 配置
+echo "================= step 6: seeds generator... ================="
+"$SCRIPTS_DIR/setup_seeds_generator.sh"
+
 echo 
 echo "===== 初始化完成! ====="

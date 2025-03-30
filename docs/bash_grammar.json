@@ -1,0 +1,228 @@
+{
+    "<PROGRAM>": [
+        ["<STATEMENT>", " ;\n", "<PROGRAM>"],
+        ["<STATEMENT>", " ; "],
+        ["<STATEMENT>"]
+    ],
+    "<STATEMENT>": [
+        ["<CMD>"],
+        ["<LOOP>"],
+        ["<FUNCTION>"],
+        ["<IF>"],
+        ["<VARIABLE_ASSIGNMENT>"]
+    ],
+    "<CMD>": [
+        ["<CMD_BASE>"],
+        ["<CMD_BASE>", " | ", "<CMD>"],
+        ["<CMD_BASE>", " |& ", "<CMD>"]
+    ],
+    "<CMD_BASE>": [
+        ["<SIMPLE_CMD>"],
+        ["<COMPOUND_CMD>"],
+        ["<SUBSHELL>"],
+        ["<TEST_CMD>"],
+        ["<DIRECTORY_STACK>"]
+    ],
+    "<SIMPLE_CMD>": [
+        ["<BUILTIN_CMD>", " ", "<ARG_LIST>", " ", "<REDIRECTION>"],
+        ["<BUILTIN_CMD>", " ", "<ARG_LIST>"],
+        ["<BUILTIN_CMD>"]
+    ],
+    "<REDIRECTION>": [
+        [">",   " ", "<FILENAME>"],
+        ["<",   " ", "<FILENAME>"],
+        ["2>",  " ", "<FILENAME>"],
+        [">>",  " ", "<FILENAME>"],
+        ["2>>", " ", "<FILENAME>"],
+        [">&",  " ", "<FILENAME>"],
+        ["&>",  " ", "<FILENAME>"]
+    ],
+    "<COMPOUND_CMD>": [
+        ["{ ", "<STATEMENT_LIST>", " }"]
+    ],
+    "<SUBSHELL>": [
+        ["( ", "<STATEMENT_LIST>", " )"]
+    ],
+    "<TEST_CMD>": [
+        ["[[ ", "<TEST_EXPRESSION>", " ]]"],
+        ["(( ", "<ARITH_EXPR>", " ))"],
+        ["[ ", "<TEST_EXPRESSION>", " ]"]
+    ],
+    "<TEST_EXPRESSION>": [
+        ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
+        ["<NUMBER>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
+        ["<VARIABLE>", " ", "<COMPARE_OP>", " ", "<STRING>"],
+        ["<VARIABLE>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
+        ["-f", " ", "<FILENAME>"],
+        ["-d", " ", "<FILENAME>"],
+        ["-e", " ", "<FILENAME>"],
+        ["-z", " ", "<STRING>"],
+        ["-n", " ", "<STRING>"]
+    ],
+
+    "<DIRECTORY_STACK>": [
+        ["pushd", " ", "<ARG_LIST>"],
+        ["popd", " ", "<ARG_LIST>"],
+        ["dirs", " ", "<ARG_LIST>"],
+        ["pushd"],
+        ["popd"],
+        ["dirs"]
+    ],
+    "<LOOP>": [
+        ["for ", "<VARIABLE>", " in ", "<WORD_LIST>", "; do\n", "<STATEMENT_LIST>", "done"],
+        ["while ", "<CONDITION>", "; do\n", "<STATEMENT_LIST>", "done"],
+        ["until ", "<CONDITION>", "; do\n", "<STATEMENT_LIST>", "done"]
+    ],
+    
+    "<FUNCTION>": [
+        ["function ", "<VARIABLE>", "() {\n", "<FUNCTION_BODY>", "}"],
+        ["<VARIABLE>", "() {\n", "<FUNCTION_BODY>", "}"]
+    ],
+    "<FUNCTION_BODY>": [
+        ["<FUNCTION_STATEMENT>", ";\n", "<FUNCTION_BODY>"],
+        ["<FUNCTION_STATEMENT>", ";\n"]
+    ],
+    "<FUNCTION_STATEMENT>": [
+        ["<CMD>"],
+        ["<LOOP>"],
+        ["<IF>"],
+        ["<VARIABLE_ASSIGNMENT>"]
+    ],
+    
+    "<IF>": [
+        ["if ", "<CONDITION>", "; then\n", "<STATEMENT_LIST>", "fi"],
+        ["if ", "<CONDITION>", "; then\n", "<STATEMENT_LIST>", "else\n", "<STATEMENT_LIST>", "fi"],
+        ["if ", "<CONDITION>", "; then\n", "<STATEMENT_LIST>", "elif ", "<CONDITION>", "; then\n", "<STATEMENT_LIST>", "fi"]
+    ],
+
+    "<VARIABLE_ASSIGNMENT>": [
+        ["<VARIABLE>", "=", "<VALUE>"],
+        ["<VARIABLE>", "+=", "<VALUE>"],
+
+        ["<ARRAY_NAME>", "=", "( ", "<ARRAY_ITEMS>", " )"],
+        ["<ARRAY_NAME>", "[", "<NUMBER>", "]=", "<VALUE>"],          
+        ["<ARRAY_NAME>", "+=", "( ", "<ARRAY_ITEMS>", " )"]          
+    ],
+    "<VALUE>": [
+        ["<STRING>"],
+        ["<NUMBER>"],
+        ["<COMMAND_SUBST>"],
+
+        ["${", "<ARRAY_NAME>", "[@]}"],     
+        ["${", "<ARRAY_NAME>", "[*]}"],     
+        ["${", "<ARRAY_NAME>", "[", "<NUMBER>", "]}"]  
+    ],
+    "<ARRAY_NAME>": [["<VARIABLE>"]],
+    "<ARRAY_ITEMS>": [["<VALUE>", " ", "<ARRAY_ITEMS>"], ["<VALUE>"]],
+    "<COMMAND_SUBST>": [
+        ["$(", "<STATEMENT_LIST>", ")"],
+        ["`", "<STATEMENT_LIST>", "`"]
+    ],
+
+    "<EXPRESSION>": [
+        ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
+        ["<NUMBER>", " ", "<ARITH_OP>", " ", "<NUMBER>"]
+    ],
+    "<ARITH_EXPR>": [
+        ["<NUMBER>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
+        ["<VARIABLE>", " ", "<ARITH_OP>", " ", "<NUMBER>"]
+    ],
+    "<CONDITION>": [
+        ["<TEST_CMD>"],
+        ["<TEST_EXPRESSION>"]
+    ],
+    "<STATEMENT_LIST>": [
+        ["<STATEMENT>", ";\n", "<STATEMENT_LIST>"],
+        ["<STATEMENT>", ";\n"]
+    ],
+    "<WORD_LIST>": [
+        ["<WORD>", " ", "<WORD_LIST>"],
+        ["<WORD>"]
+    ],
+    "<VALUE_LIST>": [
+        ["<VALUE>", " ", "<VALUE_LIST>"],
+        ["<VALUE>"]
+    ],
+    "<ARG_LIST>": [
+        ["<ARG>", " ", "<ARG_LIST>"],
+        ["<ARG>"]
+    ],
+
+    "<COMPARE_OP>": [["=="], ["!="], ["=~"]],
+    "<ARITH_COMPARE_OP>": [["-eq"], ["-ne"], ["-lt"], ["-gt"], ["-le"], ["-ge"]],
+    "<ARITH_OP>": [["+"], ["-"], ["*"], ["/"], ["%"]],
+
+    "<WORD>": [
+        ["<ALPHA_CHAR>"],
+        ["<ALPHA_CHAR>", "<WORD>"],
+        ["$", "<VARIABLE>"],
+        ["\"", "<STRING_CONTENT>", "\""],
+        ["'", "<STRING_CONTENT>", "'"]
+    ],
+    "<ARG>": [
+        ["<WORD>"],
+        ["<PROCESS_SUBST>"]
+    ],
+    "<PROCESS_SUBST>": [
+        [">", "(", " ", "<STATEMENT_LIST>", " ", ")"],
+        ["<", "(", " ", "<STATEMENT_LIST>", " ", ")"]
+    ],
+    "<STRING>": [
+        ["\"", "<STRING_CONTENT>", "\""],
+        ["'", "<STRING_CONTENT>", "'"]
+    ],
+    "<FILENAME>": [
+        ["/tmp/seed_temp_", "<SIMPLE_NAME>"]
+    ],
+    "<SIMPLE_NAME>": [
+        ["<ALPHA_CHAR>"],
+        ["<ALPHA_CHAR>", "<ALPHA_CHAR>"],
+        ["<ALPHA_CHAR>", "<DIGIT>"],
+        ["<ALPHA_CHAR>", "_", "<ALPHA_CHAR>"],
+        ["<VARIABLE>"],
+        ["<NUMBER>"]
+    ],
+    "<VARIABLE>": [
+        ["<ALPHA_CHAR>", "<VAR_CHAR>"],
+        ["<ALPHA_CHAR>"]
+    ],
+    "<VAR_CHAR>": [
+        ["<ALPHA_CHAR>"],
+        ["<DIGIT>"],
+        ["_"],
+        ["<ALPHA_CHAR>", "<VAR_CHAR>"],
+        ["<DIGIT>", "<VAR_CHAR>"],
+        ["_", "<VAR_CHAR>"]
+    ],
+    "<STRING_CONTENT>": [
+        ["<CHAR>", "<STRING_CONTENT>"],
+        ["<CHAR>"]
+    ],
+    "<CHAR>": [
+        ["<ALPHA_CHAR>"],
+        ["<DIGIT>"],
+        ["<SPECIAL_CHAR>"]
+    ],
+    "<SPECIAL_CHAR>": [["!"], ["@"], ["#"], ["$"], ["%"], ["^"], ["&"], ["*"]],
+    "<NUMBER>": [
+        ["<DIGIT>"],
+        ["<DIGIT>", "<NUMBER>"]
+    ],
+    "<DIGIT>": [["0"], ["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"]],
+    "<ALPHA_CHAR>": [
+        ["a"],["b"],["c"],["d"],["e"],["f"],["g"],["h"],["i"],["j"],["k"],["l"],["m"],
+        ["n"],["o"],["p"],["q"],["r"],["s"],["t"],["u"],["v"],["w"],["x"],["y"],["z"],
+        ["A"],["B"],["C"],["D"],["E"],["F"],["G"],["H"],["I"],["J"],["K"],["L"],["M"],
+        ["N"],["O"],["P"],["Q"],["R"],["S"],["T"],["U"],["V"],["W"],["X"],["Y"],["Z"]
+    ],
+    "<BUILTIN_CMD>": [
+        ["ls"], ["pwd"], 
+        ["cat"], ["grep"], ["sed"], ["awk"], ["sort"], ["uniq"], ["wc"], ["head"], ["tail"], ["cut"], ["tr"],
+        ["echo"], ["printf"], ["read"],   
+        ["true"], ["false"], ["test"],
+        ["find"], ["diff"], ["cmp"], ["comm"], ["xargs"],
+        ["ping"], ["wget"], ["curl"], ["ssh"], ["scp"],
+        ["date"], ["time"], ["who"], ["which"], ["type"], 
+        ["clear"], ["du"], ["df"], ["free"]
+    ]
+}
