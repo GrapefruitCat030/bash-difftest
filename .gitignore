@@ -1,12 +1,13 @@
 tree-sitter-bash/
 build/
+seeds/
+tmp/
 .vscode/
 
 results/posix_code/*.sh
 results/reports/*.txt
 results/reports/*.json
 
-tmp/
 TODO.md
 *.log
 **/*.log
