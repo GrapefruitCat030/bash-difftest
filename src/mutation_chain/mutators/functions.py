@@ -31,15 +31,35 @@ class FunctionsMutator(BaseMutator):
         # 遍历AST，收集所有function_definition节点
         def _traverse(node: tree_sitter.Node):
             if node.type in self.target_node_types:
-                # 生成POSIX等效代码，并记录替换位置
-                posix_code = self._generate_posix_code(node, source_code)
-                patches.append((node.start_byte, node.end_byte, posix_code))
+                # 查找函数的关键组件
+                name_node = None
+                body_node = None
+                function_keyword = None
+                
+                for child in node.children:
+                    if child.type == "word":  # 函数名
+                        name_node = child
+                    elif child.type == "compound_statement":  # 函数体
+                        body_node = child
+                    elif child.type == "function":  # function关键字
+                        function_keyword = child
+                
+                if name_node and body_node:
+                    # 确定函数声明结束位置（不包含函数体）
+                    decl_end = body_node.start_byte
+                    # 提取函数名
+                    function_name = source_code[name_node.start_byte:name_node.end_byte]
+                    # 生成POSIX兼容版本的函数声明
+                    posix_decl = f"{function_name}() "
+                    # 添加补丁，仅替换函数声明部分
+                    patches.append((node.start_byte, decl_end, posix_decl))
+                    
             for child in node.children:
                 _traverse(child)
         
         # 执行遍历
         if root:
-            _traverse(root)
+            _traverse(root)      
         
         # 更新上下文信息
         transformed_features = context.get('transformed_features', set())
@@ -49,30 +69,3 @@ class FunctionsMutator(BaseMutator):
         # 应用补丁并返回结果
         return self.apply_patches(source_code, patches), context
     
-    def _generate_posix_code(self, node: tree_sitter.Node, source_code: str) -> str:
-        """根据函数定义节点生成POSIX兼容的函数定义"""
-        # 查找函数名称节点
-        name_node = None
-        body_start = None
-        body_end = None
-        
-        for child in node.children:
-            if child.type == "word":  # 函数名通常在word节点中
-                name_node = child
-            elif child.type == "compound_statement":  # 函数体
-                body_start = child.start_byte
-                body_end = child.end_byte
-        
-        if not name_node or body_start is None:
-            # 如果找不到必要的组件，返回原始代码
-            return source_code[node.start_byte:node.end_byte]
-        
-        # 提取函数名
-        function_name = source_code[name_node.start_byte:name_node.end_byte]
-        
-        # 提取函数体内容（包括大括号）
-        function_body = source_code[body_start:body_end]
-        
-        # 生成POSIX兼容的函数定义
-        # 无论原来是哪种形式，都转换为 func() { ... } 格式
-        return f"{function_name}() {function_body}"
