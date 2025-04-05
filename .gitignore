@@ -4,17 +4,19 @@ seeds/
 tmp/
 .vscode/
 
-results/posix_code/*.sh
+results/posix_code/
 results/reports/*.txt
 results/reports/*.json
 
-TODO.md
+grammar_generator-*
+
 *.log
 **/*.log
 **/__pycache__/
 *.pyc
 
 
+TODO.md
 kksk.py
 suki.py
 output.txt

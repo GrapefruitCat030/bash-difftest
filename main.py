@@ -4,6 +4,7 @@ Shell Metamorphic Differential Testing Framework
 Main entry point for the framework
 """
 
+import shutil
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="tree_sitter")
 
@@ -15,6 +16,7 @@ import importlib
 import inspect
 import traceback
 import signal
+from time import sleep
 from pathlib import Path
 from typing import Dict, Any
 
@@ -153,19 +155,27 @@ def run_difftest(config):
 
     try:
         round_results = []
+        
+        base_seed_dir = config.get("seeds_dir")
+        result_dir = config.get("results").get("posix_code")
+        if Path(base_seed_dir).exists():
+            shutil.rmtree(base_seed_dir)
+        if Path(result_dir).exists():
+            shutil.rmtree(result_dir)
+
         while True:
             round_num += 1
-            logger.info(f"Staring Round [{round_num}] .")
+            logger.info(f"Staring Round [{round_num}]. waiting for 5 seconds...")
+            sleep(5)
 
             # generate test seeds
-            base_seed_dir = config.get("seeds_dir")
             round_seed_dir = Path(base_seed_dir) / f"round_{round_num}"
             round_seed_dir.mkdir(parents=True, exist_ok=True)
 
             utils.generate_seed_scripts(round_seed_dir, 10, 100)
 
             # get all test seed files
-            seed_files = list(Path(round_seed_dir).glob("*.sh"))
+            seed_files = list(Path(round_seed_dir).glob("*"))
             
             # process each test seed file
             for seed_file in seed_files:
@@ -174,7 +184,7 @@ def run_difftest(config):
                 try:
                     bash_code = seed_file.read_text()
                     posix_code = mutation_chain.transform(bash_code)
-                    posix_code_dir = Path(config.get("results").get("posix_code")) / f"round_{round_num}"
+                    posix_code_dir = Path(result_dir) / f"round_{round_num}"
                     posix_code_dir.mkdir(parents=True, exist_ok=True)
                     posix_file = posix_code_dir / f"{seed_file.stem}_posix.sh"
                     posix_file.write_text(posix_code)
