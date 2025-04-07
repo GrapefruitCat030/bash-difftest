@@ -11,12 +11,12 @@ class LLMClient:
 
     def generate_response(self, prompt: str):
         response = self.provider.generate_response(prompt)
-        content = self.provider.validate_response(response)
+        content = self.provider.extract_response(response)
         return content
     
     def refine_code(self, prompt: str):
         response = self.provider.refine_code(prompt)
-        content = self.provider.validate_response(response)
+        content = self.provider.extract_response(response)
         return content
 
     def clear_history(self):

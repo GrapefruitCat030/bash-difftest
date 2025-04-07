@@ -42,9 +42,9 @@ class DeepseekProvider(BaseProvider):
         
         return response
 
-    def validate_response(self, response: Dict[str, Any]) -> str:
+    def extract_response(self, response: Dict[str, Any]) -> str:
         """
-        Validate the OpenAI API response and extract the generated text.
+        extract the deepseek API response from the generated text.
         """
         if "error" in response:
             raise Exception(f"Error from OpenAI API: {response['error']}")

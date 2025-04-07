@@ -50,9 +50,9 @@ class OpenAIProvider(BaseProvider):
         
         return response
 
-    def validate_response(self, response: Dict[str, Any]) -> str:
+    def extract_response(self, response: Dict[str, Any]) -> str:
         """
-        Validate the OpenAI API response and extract the generated text.
+        extract the OpenAI API response from the generated text.
         
         Args:
             response (Dict): The response from the OpenAI API.

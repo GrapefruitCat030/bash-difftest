@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Dict, Any
 from string import Template
+from src.utils import initialize_parser
 
 class PromptEngine:
     """Shell转换器的Prompt生成引擎"""
@@ -56,6 +57,25 @@ class PromptEngine:
                 examples[shell_type] = f.read()
         return examples
 
+    def _load_ast(self, feature: str) -> str:
+        """
+        利用tree-sitter API 加载bash对应语法转换示例的AST 
+        Args:
+            feature: 语法特性名称 (如 'Array', 'ProcessSubstitution'等)
+        Returns:
+            包含Bash AST的字符串
+        """
+        bash_code = ""
+        example_path = self.examples_dir / f"{feature}_bash.sh"
+        if not example_path.exists():
+            raise FileNotFoundError(f"示例文件 {example_path} 不存在")
+        with open(example_path, "r", encoding="utf-8") as f:
+            bash_code = f.read()
+        # 使用tree-sitter生成AST
+        parser = initialize_parser() 
+        tree = parser.parse(bash_code.encode("utf-8"))
+        return tree.root_node.sexp()
+
     def generate_mutator_prompt(self, feature: str) -> str:
         """
         生成用于创建mutator的prompt
@@ -64,10 +84,8 @@ class PromptEngine:
         Returns:
             填充后的prompt字符串
         """
-        # 加载文档和示例
         doc_content = self._load_shell_doc(feature)
         examples = self._load_examples(feature)
-        # 填充模板
         prompt = self.template.substitute(
             feature_name=feature,
             feature_rules=doc_content,
@@ -86,9 +104,13 @@ class PromptEngine:
         Returns:
             填充后的prompt字符串
         """
+        examples = self._load_examples(feature)
+        ast = self._load_ast(feature)
         prompt = self.refinement_template.substitute(
             feature_name=feature,
             feedback=feedback,
-            previous_code=previous_mutator_code
+            previous_code=previous_mutator_code,
+            bash_example=examples["bash"],
+            bash_ast=ast,
         )
         return prompt 

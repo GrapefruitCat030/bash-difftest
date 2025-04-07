@@ -28,9 +28,9 @@ class BaseProvider(ABC):
         pass
 
     @abstractmethod
-    def validate_response(self, response: Any) -> str:
+    def extract_response(self, response: Any) -> str:
         """
-        Validate and extract the content from the provider's response.
+        extract the content from the provider's response.
         
         Args:
             response (Any): The response object from the provider.
