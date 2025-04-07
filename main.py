@@ -99,7 +99,7 @@ def prepare_mutators(config: Dict[str, Any]):
         valid, feedback = validator.validate(mutator_code, feature)
         
         attempts = 1
-        max_attempts = config.get("validation").get("max_validation_attempts", 5)
+        max_attempts = config.get("validation").get("max_validation_attempts", 2)
         
         while not valid and attempts < max_attempts:
             logger.info(f"Mutator validation failed. Attempt {attempts}/{max_attempts}. Regenerating...")

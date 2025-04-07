@@ -22,8 +22,16 @@ def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int 
     # move files from <seed_dir>/seeds to <seed_dir>
     if subdir_seeds.exists() and subdir_seeds.is_dir():
         for seed_file in subdir_seeds.iterdir():
+            # shfmt the seed file
             if seed_file.is_file():
-                shutil.move(str(seed_file), str(seed_dir))
+                try:
+                    subprocess.run(["shfmt", "-w", str(seed_file)],check=True),
+                    shutil.move(str(seed_file), str(seed_dir))
+                except subprocess.CalledProcessError as e:
+                    print(f"Error while formatting seed file {seed_file}: {e}")
+                    seed_file.write_text("")
+                    shutil.move(str(seed_file), str(seed_dir))
+                    continue
 
     # remove the <seed_dir>/seeds and <seed_dir>/trees
     for subdir in [subdir_seeds, subdir_trees]:
