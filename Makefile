@@ -91,13 +91,13 @@ clean: clean-reports clean-transformed clean-mutators clean-venv
 # Clean up test reports
 clean-reports:
 	@echo "$(GREEN)Cleaning up test reports...$(NC)"
-	@rm $(REPORT_DIR)/{*.txt,*.json}
+	@rm -f $(REPORT_DIR)/*.txt $(REPORT_DIR)/*.json 
 	@echo "$(GREEN)Test reports cleaned.$(NC)"
 
 # Clean up transformed results
 clean-transformed:
 	@echo "$(GREEN)Cleaning up transformed results...$(NC)"
-	@rm $(TRANRES_DIR)/*.sh
+	@rm -f $(TRANRES_DIR)/*.sh
 	@echo "$(GREEN)Transformed results cleaned.$(NC)"
 
 # Clean up mutators

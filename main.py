@@ -143,7 +143,7 @@ def run_difftest(config):
     diffTester = DifferentialTester(
         bash_binpath=config.get("bash_binpath"),
         posix_binpath=config.get("posix_binpath"),
-        timeout=config.get("timeout", 10)
+        timeout=config.get("timeout", 5)
     )
     report_dir = config.get("results").get("reports")
     reporter = TestReporter(report_dir)
@@ -233,7 +233,8 @@ def run_difftest(config):
         logger.info(f"Total failed:     {summary['failed']}")
         logger.info(f"Total warnings:   {summary['warnings']}")
         logger.info(f"Total errors:     {summary['errors']}")
-        logger.info(f"Success rate:     {summary['success_rate']:.2f}%")
+        logger.info(f"Effective rate:   {summary['effective_rate']}")
+        logger.info(f"Success rate:     {summary['success_rate']}")
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")

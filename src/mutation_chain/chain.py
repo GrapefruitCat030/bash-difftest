@@ -15,20 +15,17 @@ class MutatorChain:
     """
     
     def __init__(self):
-        """初始化一个空的转换器链"""
         self.mutators: List[BaseMutator] = []
         self.logger = logging.getLogger("mutator-chain")
         self.logger.setLevel(logging.INFO)
 
     def register(self, mutator: BaseMutator) -> 'MutatorChain':
-        """注册一个转换器到链上"""
         if not isinstance(mutator, BaseMutator):
-            raise TypeError("转换器必须是BaseMutator的实例")
+            raise TypeError("mutator must be an instance of BaseMutator")
         self.mutators.append(mutator)
         return self
     
     def register_all(self, mutators: List[BaseMutator]) -> 'MutatorChain':
-        """批量注册多个转换器"""
         for mutator in mutators:
             self.register(mutator)
         return self
@@ -47,12 +44,7 @@ class MutatorChain:
         context = {}  # 初始空上下文
         
         for i, mutator in enumerate(self.mutators):
-            self.logger.debug(f"应用转换器: {mutator.__class__.__name__}")
-
             result, context = mutator.transform(result, context)
-            
-            if context and 'transformed_features' in context:
-                self.logger.debug(f"  转换特性: {context['transformed_features']}")
 
         return result
     
@@ -65,5 +57,4 @@ class MutatorChain:
         return self
     
     def get_mutators(self) -> List[BaseMutator]:
-        """获取当前注册的所有转换器"""
         return self.mutators.copy()

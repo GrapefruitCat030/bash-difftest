@@ -1,6 +1,9 @@
 from pathlib import Path
 import shutil
 import subprocess
+import logging
+
+logger = logging.getLogger(__name__)
 
 def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int = 100) -> None:
     """
@@ -16,7 +19,7 @@ def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int 
             check=True
         )
     except subprocess.CalledProcessError as e:
-        print(f"Error while generating seeds: {e}")
+        logger.error(f"Error generating seeds: {e}") 
         return
 
     # move files from <seed_dir>/seeds to <seed_dir>
@@ -25,12 +28,15 @@ def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int 
             # shfmt the seed file
             if seed_file.is_file():
                 try:
-                    subprocess.run(["shfmt", "-w", str(seed_file)],check=True),
+                    subprocess.run([
+                        "shfmt", "-w", str(seed_file)], 
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        check=True
+                    ),
                     shutil.move(str(seed_file), str(seed_dir))
                 except subprocess.CalledProcessError as e:
-                    print(f"Error while formatting seed file {seed_file}: {e}")
-                    seed_file.write_text("")
-                    shutil.move(str(seed_file), str(seed_dir))
+                    seed_file.unlink()
                     continue
 
     # remove the <seed_dir>/seeds and <seed_dir>/trees

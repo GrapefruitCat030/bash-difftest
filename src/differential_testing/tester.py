@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-from src.utils import execute_shell_command
+import src.utils as utils
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class DifferentialTester:
     Performs differential testing between bash and POSIX shell scripts
     """
     
-    def __init__(self, bash_binpath: str = "/bin/bash", posix_binpath: str = "/bin/sh", timeout: int = 10):
+    def __init__(self, bash_binpath: str = "/bin/bash", posix_binpath: str = "/bin/sh", timeout: int = 5):
         """
         Initialize the differential tester
         
@@ -57,14 +57,14 @@ class DifferentialTester:
             logger.debug(f"Running test with {input_desc}")
             
             # Execute bash script
-            bash_result = execute_shell_command(
+            bash_result = utils.execute_shell_command(
                 [self.bash_binpath, str(bash_script)],
                 input_text=input_data,
                 timeout=self.timeout
             )
             
             # Execute posix script
-            posix_result = execute_shell_command(
+            posix_result = utils.execute_shell_command(
                 [self.posix_binpath, str(posix_script)],
                 input_text=input_data,
                 timeout=self.timeout

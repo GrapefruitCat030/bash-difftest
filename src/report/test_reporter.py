@@ -87,6 +87,7 @@ class TestReporter:
         failed  = sum(r.get("fail_num", 0) for r in results)
         warnings= sum(r.get("warning_num", 0) for r in results)
         errors  = sum(r.get("tool_error", 0) for r in results)
+        effective_rate = ((passed + warnings) / total * 100) if total > 0 else 0
         success_rate = (passed / total * 100) if total > 0 else 0
         
         return {
@@ -95,6 +96,7 @@ class TestReporter:
             "failed": failed,
             "warnings": warnings,
             "errors": errors,
+            "effective_rate": f"{effective_rate:.2f}%",
             "success_rate": f"{success_rate:.2f}%",
         }
 
@@ -111,68 +113,6 @@ class TestReporter:
         logger.info(f"JSON report saved to: {file_path}")
         return str(file_path)
         
-    def _save_text_report(self, report: Dict[str, Any], filename: str) -> str:
-        """Save report in text format"""
-        if not filename.endswith(".txt"):
-            filename += ".txt"
-            
-        file_path = self.output_dir / filename
-        
-        with open(file_path, "w") as f:
-            f.write(f"Shell Metamorphic Differential Testing Report\n")
-            f.write(f"Generated: {report['timestamp']}\n")
-            f.write(f"\n== Summary ==\n")
-            f.write(f"Total tests: {report['summary']['total_tests']}\n")
-            f.write(f"Passed: {report['summary']['passed']}\n")
-            f.write(f"Failed: {report['summary']['failed']}\n")
-            # f.write(f"Errors: {report['summary']['errors']}\n")
-            f.write(f"Success rate: {report['summary']['success_rate']}\n")
-            
-            f.write(f"\n== Failure Analysis ==\n")
-            for reason, count in report.get("failure_analysis", {}).items():
-                f.write(f"{reason}: {count}\n")
-                
-            if "metadata" in report:
-                f.write(f"\n== Metadata ==\n")
-                for key, value in report["metadata"].items():
-                    if isinstance(value, dict):
-                        f.write(f"{key}:\n")
-                        for k, v in value.items():
-                            f.write(f"  {k}: {v}\n")
-                    else:
-                        f.write(f"{key}: {value}\n")
-                    
-            f.write(f"\n== Test Details ==\n")
-            for i, result in enumerate(report["results_details"]):
-                f.write(f"\nTest {i+1}:\n")
-                if "seed_name" in result:
-                    f.write(f"  Seed name: {result['seed_name']}\n")
-                # common or error 
-                if "error" in result:
-                    f.write(f"  ERROR: {result['error']}\n")
-                else:
-                    pass_num = result.get("pass_num", 0)
-                    test_count = result.get("test_count", 0)
-
-                    status = "PASS" if pass_num == test_count else "FAIL"
-                    f.write(f"  Status: {status}\n")
-                    
-                    # include limited details of failures to keep report readable
-                    if status == "FAIL" and "details" in result["result"]:
-                        for detail in result["details"]:
-                            if not detail.get("equivalent", True):
-                                f.write(f"  Failure details:\n")
-                                if not detail.get("stdout_match", True):
-                                    f.write(f"    - stdout mismatch\n")
-                                if not detail.get("stderr_match", True):
-                                    f.write(f"    - stderr mismatch\n")
-                                if not detail.get("exit_code_match", True):
-                                    f.write(f"    - exit code mismatch\n")
-                                break
-            
-        logger.info(f"Text report saved to: {file_path}")
-        return str(file_path)
-
     def _generate_report(self,
                         metadata: Optional[Dict[str, Any]] = None,
                         results: List[Dict[str, Any]] = []) -> Dict[str, Any]:
@@ -208,18 +148,11 @@ class TestReporter:
 
             failure_types = {}
             for detail in testcase_result.get("details", []):
-                if not detail.get("equivalent", True):
-                    # Determine failure reason
-                    reasons = {
-                        "stdout_mismatch":      not detail.get("stdout_match", True),
-                        "exit_code_mismatch":   not detail.get("exit_code_match", True),
-                        "stderr_mismatch":      not detail.get("stderr_match", True),
-                    }
-                    reason = next((k for k, v in reasons.items() if v), "unknown")
-                    failure_types[reason] = failure_types.get(reason, 0) + 1
+                status = detail.get("status", "unknown")
+                failure_types[status] = failure_types.get(status, 0) + 1
             failure_analysis.append({
                 "seed_name": seed_name,
-                "failures": failure_types,
+                "failures_type_num": failure_types,
             })
         
         # Build the report
@@ -257,8 +190,6 @@ class TestReporter:
             
         if file_format == "json":
             return self._save_json_report(report, filename)
-        elif file_format == "text":
-            return self._save_text_report(report, filename)
         else:
             raise ValueError(f"Unsupported report format: {file_format}")
     
@@ -295,12 +226,12 @@ class TestReporter:
         
         # save round report
         saved_files = {}
-        for file_format in ["json", "text"]:
-            try:
-                filename = f"round_{round_num}_report"
-                saved_files[file_format] = self._save_report(report, file_format, filename)
-            except Exception as e:
-                logger.error(f"Error saving {file_format} report: {str(e)}")
+        file_format = "json"  # default format
+        try:
+            filename = f"round_{round_num}_report"
+            saved_files[file_format] = self._save_report(report, file_format, filename)
+        except Exception as e:
+            logger.error(f"Error saving {file_format} report: {str(e)}")
         
         return summary
     
@@ -328,6 +259,8 @@ class TestReporter:
         }
         
         # global summary
+        effective_rate = ((self.all_rounds_summary["passed"] + self.all_rounds_summary["warnings"]) / self.all_rounds_summary["total_tests"] * 100) \
+                            if self.all_rounds_summary["total_tests"] > 0 else 0
         success_rate = (self.all_rounds_summary["passed"] / self.all_rounds_summary["total_tests"] * 100) \
                       if self.all_rounds_summary["total_tests"] > 0 else 0
         report["global_summary"] = {
@@ -337,18 +270,19 @@ class TestReporter:
             "failed": self.all_rounds_summary["failed"],
             "warnings": self.all_rounds_summary["warnings"],
             "errors": self.all_rounds_summary["errors"],
+            "effective_rate": f"{effective_rate:.2f}%",
             "success_rate": f"{success_rate:.2f}%"
         }
         
         # save summary report
         saved_files = {}
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        for file_format in ["json", "text"]:
-            try:
-                filename = f"summary_report_{timestamp}"
-                saved_files[file_format] = self._save_report(report, file_format, filename)
-            except Exception as e:
-                logger.error(f"Error saving {file_format} summary report: {str(e)}")
+        file_format = "json"  # default format
+        try:
+            filename = f"summary_report_{timestamp}"
+            saved_files[file_format] = self._save_report(report, file_format, filename)
+        except Exception as e:
+            logger.error(f"Error saving {file_format} summary report: {str(e)}")
                 
         return saved_files, report["global_summary"]
 
