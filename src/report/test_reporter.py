@@ -30,9 +30,10 @@ class TestReporter:
             "total_tests": 0,
             "passed": 0,
             "failed": 0,
+            "warnings": 0,
+            "errors": 0,
         }
 
-        
     def _get_shell_version(self, shell_path: str) -> str:
         """Get version information of a shell executable"""
         try:
@@ -42,7 +43,7 @@ class TestReporter:
                 text=True,
                 timeout=5
             )
-            if result.returncode == 0:
+            if result.exitcode == 0:
                 return result.stdout.strip()
             else:
                 return f"Unknown ({shell_path})"
@@ -68,26 +69,33 @@ class TestReporter:
         Generate a summary of test results
         
         Args:
-            results: List of test results, each is a dictionary with:
+            results: List of testcase result, each is a dictionary with:
                 - seed_name: Name of the test seed
                 - test_count: int
                 - pass_num: int
+                - fail_num: int
+                - waring_num: int
                 - details: List of dictionaries with detail for each test input
+            or  
+                - seed_name: Name of the test seed
+                - tool_error: str(e)
         Returns:
             Summary dictionary
         """
-        total = sum(r.get("test_count", 0) for r in results)
-        passed = sum(r.get("pass_num", 0) for r in results)
-        failed = total - passed
-
-        # Calculate success rate
+        total   = sum(r.get("test_count", 0) for r in results)
+        passed  = sum(r.get("pass_num", 0) for r in results)
+        failed  = sum(r.get("fail_num", 0) for r in results)
+        warnings= sum(r.get("warning_num", 0) for r in results)
+        errors  = sum(r.get("tool_error", 0) for r in results)
         success_rate = (passed / total * 100) if total > 0 else 0
         
         return {
             "total_tests": total,
             "passed": passed,
             "failed": failed,
-            "success_rate": f"{success_rate:.2f}%"
+            "warnings": warnings,
+            "errors": errors,
+            "success_rate": f"{success_rate:.2f}%",
         }
 
     def _save_json_report(self, report: Dict[str, Any], filename: str) -> str:
@@ -182,15 +190,24 @@ class TestReporter:
         summary = self._generate_results_summary(results)
         
         # Group failures by type
-        failure_types = {}
-        for r in results:
-            test_count = r.get("test_count", 0)
-            pass_num = r.get("pass_num", 0)
+        failure_analysis = []
+        for testcase_result in results:
+            seed_name = testcase_result.get("seed_name", "unknown_seed")
+            test_count = testcase_result.get("test_count", 0)
+            pass_num = testcase_result.get("pass_num", 0)
             
             if pass_num == test_count:
                 continue  # Test passed
-            
-            for detail in r.get("details", []):
+
+            if testcase_result.get("tool_error"):
+                failure_analysis.append({
+                    "seed_name": seed_name,
+                    "error": testcase_result["tool_error"],
+                })
+                continue
+
+            failure_types = {}
+            for detail in testcase_result.get("details", []):
                 if not detail.get("equivalent", True):
                     # Determine failure reason
                     reasons = {
@@ -200,14 +217,18 @@ class TestReporter:
                     }
                     reason = next((k for k, v in reasons.items() if v), "unknown")
                     failure_types[reason] = failure_types.get(reason, 0) + 1
+            failure_analysis.append({
+                "seed_name": seed_name,
+                "failures": failure_types,
+            })
         
         # Build the report
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         report = {
             "timestamp": timestamp,
             "summary": summary,
-            "failure_analysis": failure_types,
-            "results_details": results,
+            "failure_analysis": failure_analysis,
+            "result_details_of_testcases": results,
         }
         
         if metadata:
@@ -269,6 +290,8 @@ class TestReporter:
         self.all_rounds_summary["total_tests"] += summary["total_tests"]
         self.all_rounds_summary["passed"] += summary["passed"]
         self.all_rounds_summary["failed"] += summary["failed"]
+        self.all_rounds_summary["warnings"] += summary["warnings"]
+        self.all_rounds_summary["errors"] += summary["errors"]
         
         # save round report
         saved_files = {}
@@ -312,6 +335,8 @@ class TestReporter:
             "total_tests": self.all_rounds_summary["total_tests"],
             "passed": self.all_rounds_summary["passed"],
             "failed": self.all_rounds_summary["failed"],
+            "warnings": self.all_rounds_summary["warnings"],
+            "errors": self.all_rounds_summary["errors"],
             "success_rate": f"{success_rate:.2f}%"
         }
         

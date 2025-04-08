@@ -40,7 +40,7 @@ class DifferentialTester:
         Returns:
             a dictionary with test results:
             - seed_name: Name of the test seed
-            - test_count: int
+            - test_count: Number of tests run with different inputs
             - pass_num: Number of tests that passed
             - details: List of dictionaries with detail for each test input
         """
@@ -49,7 +49,7 @@ class DifferentialTester:
         if test_inputs is None:
             test_inputs = [""]
             
-        results = []
+        details = []
         
         # Run tests with each input
         for i, input_data in enumerate(test_inputs):
@@ -73,27 +73,32 @@ class DifferentialTester:
             # Check equivalence
             stdout_match = bash_result["stdout"].strip() == posix_result["stdout"].strip()
             stderr_match = bash_result["stderr"].strip() == posix_result["stderr"].strip()
-            exit_code_match = bash_result["returncode"] == posix_result["returncode"]
-            
+            exit_code_match = bash_result["exitcode"] == posix_result["exitcode"]
+
+            status = "SUCCESS"
+            if not exit_code_match:
+                status = "FAILURE"
+            elif not stdout_match or not stderr_match:
+                status = "WARNING"
+
             result = {
+                "status": status,
                 "input": input_data,
                 "bash_stdout": bash_result["stdout"],
                 "posix_stdout": posix_result["stdout"],
                 "bash_stderr": bash_result["stderr"],
                 "posix_stderr": posix_result["stderr"],
-                "bash_exit_code": bash_result["returncode"],
-                "posix_exit_code": posix_result["returncode"],
-                "stdout_match": stdout_match,
-                "stderr_match": stderr_match,
-                "exit_code_match": exit_code_match,
-                "equivalent": stdout_match and exit_code_match  # stderr is less important
+                "bash_exit_code": bash_result["exitcode"],
+                "posix_exit_code": posix_result["exitcode"],
             }
             
-            results.append(result)
+            details.append(result)
             
         return {
-            "seed_name": bash_script.name,
-            "test_count": len(results),
-            "pass_num": sum(1 for r in results if r["equivalent"]),
-            "details": results
+            "seed_name":    str(bash_script),
+            "test_count":   len(details),
+            "pass_num":     sum(1 for d in details if d["status"] == "SUCCESS"),
+            "fail_num":     sum(1 for d in details if d["status"] == "FAILURE"),
+            "warning_num":  sum(1 for d in details if d["status"] == "WARNING"),
+            "details":      details
         }

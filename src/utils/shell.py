@@ -49,10 +49,10 @@ def execute_shell_command(
         result = {
             "stdout": stdout,
             "stderr": stderr,
-            "returncode": process.returncode
+            "exitcode": process.exitcode
         }
         
-        logger.debug(f"Command completed with return code {process.returncode}")
+        logger.debug(f"Command completed with return code {process.exitcode}")
         return result
         
     except subprocess.TimeoutExpired:
@@ -60,12 +60,12 @@ def execute_shell_command(
         return {
             "stdout": "",
             "stderr": f"Command timed out after {timeout} seconds",
-            "returncode": -1
+            "exitcode": -1
         }
     except Exception as e:
         logger.error(f"Error executing command: {str(e)}")
         return {
             "stdout": "",
             "stderr": f"Error: {str(e)}",
-            "returncode": -1
+            "exitcode": -1
         }

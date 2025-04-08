@@ -150,7 +150,7 @@ class MutatorValidator:
             
             Path(temp_path).unlink()  # Clean up
             
-            if result["returncode"] == 0:
+            if result["exitcode"] == 0:
                 return True, "Syntax is valid"
             else:
                 return False, result["stderr"]

@@ -190,22 +190,22 @@ def run_difftest(config):
                     posix_file.write_text(posix_code)
                     
                     # Run differential test
-                    test_result = diffTester.test(seed_file, posix_file)
-                    round_results.append(test_result)
+                    testcase_result = diffTester.test(seed_file, posix_file)
+                    round_results.append(testcase_result)
                 
                 except Exception as e:
                     err_stack = traceback.format_exc()
                     logger.error(f"Error processing {seed_file}: {str(e)}\n{err_stack}")
-                    # TODO: hold the errors
                     round_results.append({
                         "seed_name": str(seed_file),
-                        "error": str(e)
+                        "tool_error": str(e)
                     })
 
             # generate and save test reports in this round
             round_summary = reporter.generate_round_report(round_num, round_results)
             logger.info(f"End Round [{round_num}]. Round summary: Tests: {round_summary['total_tests']}, " 
-                        f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, ")
+                        f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, "
+                        f"Warnings: {round_summary['warnings']}, Errors: {round_summary['errors']}")
             logger.info(f"Report saved to {report_dir}/round_{round_num}")
             
             # clear round results
@@ -226,13 +226,14 @@ def run_difftest(config):
         # summarize all rounds 
         saved_files, summary = reporter.generate_summary_report(config)
         logger.info(f"Testing complete. Summary:")
-        logger.info(f"Saved files: {saved_files}")
-        logger.info(f"Total rounds: {summary['total_rounds']}")
-        logger.info(f"Total tests:  {summary['total_tests']}")
-        logger.info(f"Total passed: {summary['total_passed']}")
-        logger.info(f"Total failed: {summary['total_failed']}")
-        logger.info(f"Total errors: {summary['total_errors']}")
-        logger.info(f"Success rate: {summary['success_rate']:.2f}%")
+        logger.info(f"Saved files:      {saved_files}")
+        logger.info(f"Total rounds:     {summary['total_rounds']}")
+        logger.info(f"Total tests:      {summary['total_tests']}")
+        logger.info(f"Total passed:     {summary['passed']}")
+        logger.info(f"Total failed:     {summary['failed']}")
+        logger.info(f"Total warnings:   {summary['warnings']}")
+        logger.info(f"Total errors:     {summary['errors']}")
+        logger.info(f"Success rate:     {summary['success_rate']:.2f}%")
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")
