@@ -74,8 +74,19 @@ class ArrayMutator(BaseMutator):
                         name_node = node.child_by_field_name("name")
                         if name_node:
                             array_name = source_code[name_node.start_byte:name_node.end_byte]
-                            context['arrays'][array_name] = {'is_array': True}
-            
+                            context['arrays'][array_name] = {'is_array': True, 'length': 0}
+                
+                # 检查是否为下标赋值形式：arr[0]="value"
+                name_node = node.child_by_field_name("name")
+                if name_node and name_node.type == "subscript":
+                    # 获取数组名
+                    array_name_node = name_node.child_by_field_name("name")
+                    if array_name_node:
+                        array_name = source_code[array_name_node.start_byte:array_name_node.end_byte]
+                        # 如果数组不存在，则添加到上下文
+                        if array_name not in context['arrays']:
+                            context['arrays'][array_name] = {'is_array': True, 'length': 0}
+
             # 递归处理子节点
             for child in node.children:
                 _traverse(child)
@@ -192,14 +203,14 @@ class ArrayMutator(BaseMutator):
         
         index_text = source_code[index_node.start_byte:index_node.end_byte]
         
-        # 检查是否为已知数组
-        if array_name not in context['arrays']:
-            return []
+        # # 检查是否为已知数组
+        # if array_name not in context['arrays']:
+        #     return []
         
         # 处理数字索引
         if index_node.type == "number":
             # 直接访问指定索引
-            posix_code = f"\"${array_name}_{index_text}\""
+            posix_code = f"${array_name}_{index_text}"
             return [(node.start_byte, node.end_byte, posix_code)]
         
         return []
@@ -234,13 +245,16 @@ class ArrayMutator(BaseMutator):
         
         index_text = source_code[index_node.start_byte:index_node.end_byte]
 
-        # 检查是否为已知数组
+        # 检查是否为已知数组 (保留此检查，因为需要知道数组长度)
         if array_name not in context['arrays']:
+            # 如果是数组长度查询但数组未知，默认返回0
+            if operator == "#" and index_text == "@":
+                return [(node.start_byte, node.end_byte, "\"0\"")]
             return []
         
         # 处理数组长度 ${#arr[@]}
         if operator == "#" and index_text == "@":
-            return [(node.start_byte, node.end_byte, f"\"${array_name}__len\"")]
+            return [(node.start_byte, node.end_byte, f"${array_name}__len")]
         
         # 处理完整数组展开 ${arr[@]}
         if index_text == "@":
@@ -249,7 +263,7 @@ class ArrayMutator(BaseMutator):
             array_len = context['arrays'][array_name].get('length', 0)
             
             for i in range(array_len):
-                elements.append(f"\"${array_name}_{i}\"")
+                elements.append(f"${array_name}_{i}")
             
             if elements:
                 return [(node.start_byte, node.end_byte, " ".join(elements))]
@@ -284,9 +298,9 @@ class ArrayMutator(BaseMutator):
         
         value_text = source_code[value_node.start_byte:value_node.end_byte]
         
-        # 检查是否为已知数组
+        # 如果数组不存在于上下文中，则添加
         if array_name not in context['arrays']:
-            return []
+            context['arrays'][array_name] = {'is_array': True, 'length': 0}
         
         # 处理常量索引
         if index_node.type == "number":
@@ -320,9 +334,9 @@ class ArrayMutator(BaseMutator):
         
         array_name = source_code[name_node.start_byte:name_node.end_byte]
         
-        # 检查是否为已知数组
+        # 如果数组不存在于上下文中，则添加
         if array_name not in context['arrays']:
-            return []
+            context['arrays'][array_name] = {'is_array': True, 'length': 0}
         
         # 获取数组值
         value_node = node.child_by_field_name("value")
