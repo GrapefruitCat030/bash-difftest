@@ -74,7 +74,17 @@ class PromptEngine:
         # 使用tree-sitter生成AST
         parser = initialize_parser() 
         tree = parser.parse(bash_code.encode("utf-8"))
-        return tree.root_node.sexp()
+    
+        def _format_node(node, level=0) -> str:
+            indent = "  " * level
+            start_line, start_col = node.start_point
+            end_line, end_col = node.end_point
+            result = f"{indent}{node.type} [{start_line}, {start_col}] - [{end_line}, {end_col}]\n"
+            for child in node.children:
+                result += _format_node(child, level + 1)
+            return result
+
+        return _format_node(tree.root_node)
 
     def generate_mutator_prompt(self, feature: str) -> str:
         """

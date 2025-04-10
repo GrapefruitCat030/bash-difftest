@@ -6,7 +6,7 @@
 
 1. **目标**：将Bash代码中的 `$feature_name` 语法替换为等效的POSIX Shell实现。
 2. **输入**：包含`$feature_name`的Bash代码片段。
-3. **输出**：转换后的POSIX Shell代码，保留原有逻辑，但移除对`$feature_name`的依赖。
+3. **输出**：转换后的POSIX Shell代码，保留原有逻辑，但移除对`$feature_name` bash特性的依赖。
 
 ---
 
@@ -39,9 +39,13 @@ $posix_example
 - **继承基类**：所有转换器必须继承自 `BaseMutator`：
 
   ```python
+  from abc import ABC, abstractmethod
+  from typing import Any, Dict, Optional, Tuple
+  from src.utils import initialize_parser
+  
   class BaseMutator(ABC):
       #  be overridden by subclasses
-      NAME = "base_mutator"  # 转换器名称
+      NAME = "base_transformer"  # 转换器名称
       DESCRIPTION = "基础转换器"  # 转换器描述
       TARGET_FEATURES = set()    # 目标Bash特性集合
       
@@ -68,6 +72,38 @@ $posix_example
   
       def apply_patches(self, source_code: str, patches: list) -> str:
           """Apply code replacement patches (shared logic for all mutators)"""
+          if not patches:
+              return source_code
+          
+          # 过滤被包含的patches，只保留最外部的
+          filtered_patches = []
+          for i, current_patch in enumerate(patches):
+              start, end = current_patch[0], current_patch[1]
+              is_contained = False
+              
+              if start == end:
+                  filtered_patches.append(current_patch)
+                  continue
+  
+              for j, other_patch in enumerate(patches):
+                  if i == j:
+                      continue
+                  other_start, other_end = other_patch[0], other_patch[1]
+                  if other_start <= start and end <= other_end:
+                      # special case: 完全相同的patch
+                      if other_start == start and other_end == end:
+                          if i > j:
+                              is_contained = True
+                              break
+                      else: 
+                          is_contained = True
+                          break
+              
+              if not is_contained:
+                  filtered_patches.append(current_patch)
+  
+          # reverse apply order
+          patches = filtered_patches
           patches.sort(reverse=True, key=lambda x: x[0])
           for start, end, replacement in patches:
               source_code = source_code[:start] + replacement + source_code[end:]
@@ -131,7 +167,8 @@ $posix_example
           # 这里实现特定语法的转换逻辑
   ```
 
-- **临时文件处理**（如需要）: 临时文件变量名用哈希方式命名，调用sh命令生成唯一的临时文件（例如用`mktemp`或`$$`），并确保清理。
+- **临时文件处理**（如需要）: 临时文件变量名用index命名(如tmp_1, tmp_2...)，调用mktemp命令生成唯一的临时文件，并确保清理。
+
 - **增强上下文追踪**: 确保所有被识别的变量能被正确地在后续引用中转换
 
 ------
@@ -143,6 +180,6 @@ $posix_example
 3. **节点类型驱动**：通过`target_node_types`定义需要处理的语法节点类型，而非tree-sitter query。
 4. **补丁顺序**：使用`apply_patches`方法处理代码替换，确保偏移量正确。
 5. **上下文维护**：通过`context`参数记录已转换特性，方便转换链中后续转换器使用。
-6. **临时文件安全**：确保生成的临时文件名唯一，并添加清理逻辑（如`trap 'rm -f tmp_0459c' EXIT`）。
+6. **临时文件安全**：确保生成的临时文件存在清理逻辑（如`rm -f tmp_1`）。
 7. **兼容性**：生成的POSIX代码需符合ShellCheck规范，避免扩展语法。
 8. **LLM输出**：仅仅输出具体的Mutator类。
