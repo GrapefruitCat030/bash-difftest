@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, List
 from src.mutation_chain import BaseMutator
 import tree_sitter
 
@@ -14,7 +14,7 @@ class ProcessSubstitutionMutator(BaseMutator):
         将Bash ProcessSubstitution 语法转换为POSIX兼容代码
         
         实现两阶段转换：
-        1. 首先处理输出进程替换 (>(cmd))，将其转换为临时文件方法
+        1. 首先处理输出进程替换 (>(cmd))，使用临时文件方法
         2. 然后处理输入进程替换 (<(cmd))，使用临时文件方法
         """
         context = context or {}
@@ -25,7 +25,7 @@ class ProcessSubstitutionMutator(BaseMutator):
         
         # 第二阶段: 处理输入进程替换 <(cmd)
         final_code, context = self._transform_input_substitutions(output_subst_code, context)
-        
+
         # 更新上下文信息
         transformed_features = context.get('transformed_features', set())
         transformed_features.update(self.TARGET_FEATURES)
@@ -38,9 +38,11 @@ class ProcessSubstitutionMutator(BaseMutator):
         处理输出进程替换 >(cmd)，使用临时文件方法
         
         转换规则：
+        command > >(cmd_seq1) > >(cmd_seq2) > >(cmd_seq3)
+        转换为：
         1. tmp=$(mktemp)
-        2. cmd1 > "$tmp"
-        3. (cmd_sequence) < "$tmp"
+        2. command > "$tmp"
+        3. (cmd_seq1) < "$tmp"; (cmd_seq2) < "$tmp"; (cmd_seq3) < "$tmp"
         4. rm -f "$tmp"
         """
         patches = []
@@ -49,85 +51,124 @@ class ProcessSubstitutionMutator(BaseMutator):
         ast = self.parser.parse(bytes(source_code, "utf8"))
         root = ast.root_node
         
+        # 收集所有输出ProcessSubstitution节点
+        output_subst_nodes = []
+        
+        def _collect_output_subst(node: tree_sitter.Node):
+            if node.type in self.target_node_types:
+                # 只处理输出进程替换 >(cmd)
+                if node.children and node.children[0].type == ">(":
+                    output_subst_nodes.append(node)
+            for child in node.children:
+                _collect_output_subst(child)
+        
+        if root:
+            _collect_output_subst(root)
+        
+        # 如果没有发现输出进程替换节点，无需转换
+        if not output_subst_nodes:
+            return source_code, context
+        
         # 查找所有重定向语句
         redirected_statements = []
         
         def find_redirected_statements(node):
             if node.type == "redirected_statement":
-                redirected_statements.append(node)
+                # 检查是否包含输出进程替换
+                contains_output_subst = False
+                for child in node.children:
+                    if child.type == "file_redirect":
+                        for redirect_child in child.children:
+                            if redirect_child.type == "process_substitution" and redirect_child.children[0].type == ">(":
+                                contains_output_subst = True
+                                break
+                
+                if contains_output_subst:
+                    redirected_statements.append(node)
+            
             for child in node.children:
                 find_redirected_statements(child)
         
         find_redirected_statements(root)
-
-        # 处理每个重定向语句，查找包含输出进程替换的情况
+        
+        # 处理每个含有输出进程替换的重定向语句
         for stmt in redirected_statements:
-            # 查找文件重定向
-            redirect_node = None
-            ps_node = None
+            # 收集命令体和所有输出进程替换
+            body_node = None
+            output_substitutions = []
             
             for child in stmt.children:
-                if child.type == "file_redirect":
-                    redirect_node = child
-                    # 检查重定向目标是否是进程替换
+                if child.type == "command" or child.type == "pipeline":
+                    body_node = child
+                elif child.type == "file_redirect":
                     for redirect_child in child.children:
-                        if redirect_child.type == "process_substitution":
-                            ps_node = redirect_child
-                            break
-                    if ps_node:
-                        break
+                        if redirect_child.type == "process_substitution" and redirect_child.children[0].type == ">(":
+                            output_substitutions.append(redirect_child)
             
-            # 如果找到了输出进程替换
-            if ps_node and ps_node.children[0].type == ">(":
-                # 找到输出进程替换
-                # 提取命令部分 - 提取所有命令序列
-                cmd_start = ps_node.children[0].end_byte  # >( 后面的位置
-                cmd_end = ps_node.children[-1].start_byte  # ) 前面的位置
+            if body_node and output_substitutions:
+                # 获取命令体文本
+                body_text = source_code[body_node.start_byte:body_node.end_byte]
                 
-                # 提取完整的命令序列
-                ps_command = source_code[cmd_start:cmd_end].strip()
-                
-                if not ps_command:
-                    continue
-                
-                # 提取左侧命令或管道部分
-                body_node = None
-                pipeline_node = None
-                
-                for stmt_child in stmt.children:
-                    if stmt_child.type == "command":
-                        body_node = stmt_child
-                        break
-                    elif stmt_child.type == "pipeline":
-                        pipeline_node = stmt_child
-                        break
-                
-                if body_node:
-                    body_text = source_code[body_node.start_byte:body_node.end_byte]
-                elif pipeline_node:
-                    body_text = source_code[pipeline_node.start_byte:pipeline_node.end_byte]
-                else:
-                    continue
-                
-                # 创建临时文件替换
+                # 创建临时文件
                 context['tmp_counter'] += 1
                 tmp_var = f"tmp{context['tmp_counter']}"
                 
-                # 构建新的代码结构
-                # 1. 创建临时文件
-                # 2. 执行原命令，输出到临时文件
-                # 3. 使用临时文件作为进程替换内命令的输入
-                # 4. 删除临时文件
-                transformed_code = (
-                    f"{tmp_var}=$(mktemp)\n"
-                    f"{body_text} > \"${tmp_var}\"\n"
-                    f"( {ps_command}; ) < \"${tmp_var}\"\n"
-                    f"rm -f \"${tmp_var}\"\n"
-                )
+                # 构建转换后的代码
+                prefix_code = f"{tmp_var}=$(mktemp)\n"
+                prefix_code += f"{body_text} > \"${tmp_var}\"\n"
+                
+                # 构建从临时文件读取的命令序列
+                suffix_code = ""
+                for ps_node in output_substitutions:
+                    # 提取进程替换中的命令序列
+                    cmd_start = ps_node.children[0].end_byte  # >( 后面的位置
+                    cmd_end = ps_node.children[-1].start_byte  # ) 前面的位置
+                    command_content = source_code[cmd_start:cmd_end].strip()
+                    
+                    if command_content:
+                        suffix_code += f"( {command_content}; ) < \"${tmp_var}\"\n"
+                
+                # 添加临时文件清理代码
+                suffix_code += f"rm -f \"${tmp_var}\"\n"
+                
+                # 检查整个语句是否在pipeline或其他重定向中
+                parent_pipeline = self._find_parent_pipeline(stmt)
+                parent_redirected = self._find_parent_redirected_statement(stmt)
+                has_final_redirect = False
+                
+                # 检查该重定向语句后是否还有其他重定向
+                for child in stmt.children:
+                    if child.type == "file_redirect":
+                        has_process_subst = False
+                        for redirect_child in child.children:
+                            if redirect_child.type == "process_substitution":
+                                has_process_subst = True
+                                break
+                        
+                        if not has_process_subst:
+                            has_final_redirect = True
+                            # 保存这个普通重定向用于后续处理
+                            final_redirect = source_code[child.start_byte:child.end_byte]
+                
+                # 生成替换代码
+                replacement = prefix_code + suffix_code
+                
+                # 若在pipeline中，需要保留pipeline结构
+                if parent_pipeline:
+                    # 在pipeline中，保留管道符号和后续命令
+                    pipe_start = None
+                    for i, pipe_child in enumerate(parent_pipeline.children):
+                        if pipe_child.type == "|" and pipe_child.start_byte > stmt.end_byte:
+                            pipe_start = pipe_child.start_byte
+                            break
+                    
+                    if pipe_start:
+                        pipe_text = source_code[pipe_start:parent_pipeline.end_byte]
+                        replacement += pipe_text
                 
                 # 添加补丁，替换整个重定向语句
-                patches.append((stmt.start_byte, stmt.end_byte, transformed_code))
-        
+                patches.append((stmt.start_byte, stmt.end_byte, replacement))
+            
         # 应用补丁
         return self.apply_patches(source_code, patches), context
     
@@ -241,13 +282,13 @@ class ProcessSubstitutionMutator(BaseMutator):
                 patches.append((ps_node.start_byte, ps_node.end_byte, f"\"${tmp_var}\""))
                 
                 # 添加临时文件清理代码
-                suffix_code += f"\nrm -f \"${tmp_var}\"\n"
+                suffix_code += f"rm -f \"${tmp_var}\"\n"
             
             # 添加前缀和后缀代码
             if prefix_code:
                 patches.append((cmd_node.start_byte, cmd_node.start_byte, prefix_code))
             if suffix_code:
-                patches.append((cmd_node.end_byte, cmd_node.end_byte, suffix_code))
+                patches.append((cmd_node.end_byte, cmd_node.end_byte, "\n" + suffix_code))
         
         # 处理pipeline
         for pipe_id, pipe_group in pipeline_groups.items():
