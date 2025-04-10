@@ -11,6 +11,10 @@
         ["<IF>"],
         ["<VARIABLE_ASSIGNMENT>"]
     ],
+    "<STATEMENT_LIST>": [
+        ["<STATEMENT>", ";\n", "<STATEMENT_LIST>"],
+        ["<STATEMENT>", ";\n"]
+    ],
     "<CMD>": [
         ["<CMD_BASE>"],
         ["<CMD_BASE>", " | ", "<CMD>"],
@@ -20,13 +24,16 @@
         ["<SIMPLE_CMD>"],
         ["<COMPOUND_CMD>"],
         ["<SUBSHELL>"],
-        ["<TEST_CMD>"],
-        ["<DIRECTORY_STACK>"]
+        ["<TEST_CMD>"]
     ],
     "<SIMPLE_CMD>": [
         ["<BUILTIN_CMD>", " ", "<ARG_LIST>", " ", "<REDIRECTION>"],
         ["<BUILTIN_CMD>", " ", "<ARG_LIST>"],
-        ["<BUILTIN_CMD>"]
+        ["<BUILTIN_CMD>"],
+        ["<EXTERNAL_CMD>", " ", "<ARG_LIST>", " ", "<REDIRECTION>"],
+        ["<EXTERNAL_CMD>", " ", "<ARG_LIST>"],
+        ["<EXTERNAL_CMD>"],
+        ["<DIRECTORY_STACK>"]
     ],
     "<REDIRECTION>": [
         [">",   " ", "<FILENAME>"],
@@ -35,7 +42,10 @@
         [">>",  " ", "<FILENAME>"],
         ["2>>", " ", "<FILENAME>"],
         [">&",  " ", "<FILENAME>"],
-        ["&>",  " ", "<FILENAME>"]
+        ["&>",  " ", "<FILENAME>"],
+        ["2>&1"],
+        ["1>&2"],
+        ["<<<", " ", "<STRING>"]
     ],
     "<COMPOUND_CMD>": [
         ["{ ", "<STATEMENT_LIST>", " }"]
@@ -158,10 +168,6 @@
         ["<TEST_CMD>"],
         ["<TEST_EXPRESSION>"]
     ],
-    "<STATEMENT_LIST>": [
-        ["<STATEMENT>", ";\n", "<STATEMENT_LIST>"],
-        ["<STATEMENT>", ";\n"]
-    ],
     "<WORD_LIST>": [
         ["<WORD>", " ", "<WORD_LIST>"],
         ["<WORD>"]
@@ -243,12 +249,14 @@
         ["N"],["O"],["P"],["Q"],["R"],["S"],["T"],["U"],["V"],["W"],["X"],["Y"],["Z"]
     ],
     "<BUILTIN_CMD>": [
-        ["ls"], ["pwd"], 
-        ["cat"], ["grep"], ["sed"], ["awk"], ["sort"], ["uniq"], ["wc"], ["head"], ["tail"], ["cut"], ["tr"],
-        ["echo"], ["printf"], ["read"],   
-        ["true"], ["false"], ["test"],
-        ["find"], ["diff"], ["cmp"], ["comm"], ["xargs"],
-        ["date"], ["time"], ["who"], ["which"], ["type"], 
-        ["clear"], ["du"], ["df"], ["free"]
+        ["pwd"], ["echo"], ["read"], ["export"], ["eval"],
+        ["alias"], ["unalias"], ["declare"], ["readonly"], 
+        ["set"], ["unset"],
+        ["true"], ["false"], ["type"], ["help"], ["printf"]
+    ],
+    "<EXTERNAL_CMD>": [
+        ["ls"], ["grep"], ["cat"], ["sed"], ["awk"], ["find"], ["sort"],
+        ["uniq"], ["wc"], ["head"], ["tail"], ["cut"], ["tr"], ["diff"],
+        ["date"], ["du"], ["df"], ["free"]
     ]
 }
