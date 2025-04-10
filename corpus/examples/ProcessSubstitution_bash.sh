@@ -20,6 +20,3 @@ cat <(grep "pattern" file1) <(grep "pattern" file2) | sort
 
 # with redirection
 cat <(grep "pattern" file1) <(grep "pattern" file2) > output.txt
-
-# with pipeline and redirection
-cat <(grep "pattern" file1) <(grep "pattern" file2) | sort > output.txt

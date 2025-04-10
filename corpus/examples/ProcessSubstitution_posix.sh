@@ -51,11 +51,3 @@ tmp12=$(mktemp)
 grep "pattern" file2 > "$tmp12"
 cat "$tmp11" "$tmp12" > output.txt
 rm -f "$tmp11" "$tmp12"
-
-# with pipeline and redirection
-tmp13=$(mktemp)
-grep "pattern" file1 > "$tmp13"
-tmp14=$(mktemp)
-grep "pattern" file2 > "$tmp14"
-cat "$tmp13" "$tmp14" | sort > output.txt
-rm -f "$tmp13" "$tmp14"
