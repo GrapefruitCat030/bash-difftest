@@ -194,11 +194,13 @@
     ],
     "<ARG>": [
         ["<WORD>"],
-        ["<PROCESS_SUBST>"]
+        ["<PROCESS_SUBST_INPUT>"]
     ],
-    "<PROCESS_SUBST>": [
-        [">", "(", " ", "<STATEMENT_LIST>", " ", ")"],
+    "<PROCESS_SUBST_INPUT>": [
         ["<", "(", " ", "<STATEMENT_LIST>", " ", ")"]
+    ],
+    "<PROCESS_SUBST_OUTPUT>": [
+        [">", "(", " ", "<STATEMENT_LIST>", " ", ")"]
     ],
     "<STRING>": [
         ["\"", "<STRING_CONTENT>", "\""],
