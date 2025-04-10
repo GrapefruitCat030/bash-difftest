@@ -68,14 +68,13 @@ class ProcessSubstitutionMutator(BaseMutator):
                     
                     if dest and dest.children[0].type == ">(":
                         # 找到输出进程替换
-                        # 提取命令部分 - 提取所有命令序列，不仅仅是第一个命令
-                        # 定位命令序列的开始和结束位置
-                        cmd_start = dest.children[0].end_byte  # >( 后面的位置
-                        cmd_end = dest.children[-1].start_byte  # ) 前面的位置
-                        
-                        # 提取完整的命令序列
-                        ps_command = source_code[cmd_start:cmd_end].strip()
-                        
+                        # 提取命令部分
+                        ps_command = None
+                        for ps_child in dest.children:
+                            if ps_child.type != ">(" and ps_child.type != ")":
+                                ps_command = ps_child.text.decode('utf8')
+                                break
+
                         if ps_command:
                             # 提取左侧命令部分
                             body_node = None
@@ -182,13 +181,12 @@ class ProcessSubstitutionMutator(BaseMutator):
             suffix_code = ""
             
             for ps_node in process_substs:
-                # 提取整个进程替换中的命令序列（可能包含多个命令）
-                # 定位命令序列的开始和结束位置
-                cmd_start = ps_node.children[0].end_byte  # <( 后面的位置
-                cmd_end = ps_node.children[-1].start_byte  # ) 前面的位置
-                
-                # 提取完整命令序列
-                command_content = source_code[cmd_start:cmd_end].strip()
+                # 提取进程替换内的命令内容
+                command_content = ""
+                for child in ps_node.children:
+                    if child.type == "command":
+                        command_content = child.text.decode('utf8')
+                        break
                 
                 if not command_content:
                     continue
@@ -198,13 +196,12 @@ class ProcessSubstitutionMutator(BaseMutator):
                 group['tmp_vars'].append(tmp_var)
                 
                 prefix_code += f"{tmp_var}=$(mktemp)\n"
-                # 使用小括号将多个命令组合在一起
-                prefix_code += f"{{ {command_content}; }} > \"${tmp_var}\"\n"
+                prefix_code += f"{command_content} > \"${tmp_var}\"\n"
                 # 替换进程替换为临时文件
                 patches.append((ps_node.start_byte, ps_node.end_byte, f"\"${tmp_var}\""))
                 
                 # 添加临时文件清理代码
-                suffix_code += f"\nrm -f \"${tmp_var}\"\n"
+                suffix_code += f"\nrm \"${tmp_var}\"\n"
             
             # 添加前缀和后缀代码
             if prefix_code:
@@ -221,12 +218,11 @@ class ProcessSubstitutionMutator(BaseMutator):
             prefix_code = ""
             # 临时文件声明和创建在管道前面
             for ps_node in pipe_group['process_substs']:
-                # 提取整个进程替换中的命令序列（可能包含多个命令）
-                cmd_start = ps_node.children[0].end_byte  # <( 后面的位置
-                cmd_end = ps_node.children[-1].start_byte  # ) 前面的位置
-                
-                # 提取完整命令序列
-                command_content = source_code[cmd_start:cmd_end].strip()
+                command_content = ""
+                for child in ps_node.children:
+                    if child.type == "command":
+                        command_content = child.text.decode('utf8')
+                        break
                 
                 if not command_content:
                     continue
@@ -235,7 +231,7 @@ class ProcessSubstitutionMutator(BaseMutator):
                 tmp_var = f"tmp{context['tmp_counter']}"
                 
                 prefix_code += f"{tmp_var}=$(mktemp)\n"
-                prefix_code += f"{{ {command_content}; }} > \"${tmp_var}\"\n"
+                prefix_code += f"{command_content} > \"${tmp_var}\"\n"
                 # 替换进程替换为临时文件
                 patches.append((ps_node.start_byte, ps_node.end_byte, f"\"${tmp_var}\""))
             
@@ -259,12 +255,11 @@ class ProcessSubstitutionMutator(BaseMutator):
             prefix_code = ""
             # 临时文件声明和创建在重定向语句前面
             for ps_node in rs_group['process_substs']:
-                # 提取整个进程替换中的命令序列（可能包含多个命令）
-                cmd_start = ps_node.children[0].end_byte  # <( 后面的位置
-                cmd_end = ps_node.children[-1].start_byte  # ) 前面的位置
-                
-                # 提取完整命令序列
-                command_content = source_code[cmd_start:cmd_end].strip()
+                command_content = ""
+                for child in ps_node.children:
+                    if child.type == "command":
+                        command_content = child.text.decode('utf8')
+                        break
                 
                 if not command_content:
                     continue
@@ -273,7 +268,7 @@ class ProcessSubstitutionMutator(BaseMutator):
                 tmp_var = f"tmp{context['tmp_counter']}"
                 
                 prefix_code += f"{tmp_var}=$(mktemp)\n"
-                prefix_code += f"{{ {command_content}; }} > \"${tmp_var}\"\n"
+                prefix_code += f"{command_content} > \"${tmp_var}\"\n"
                 # 替换进程替换为临时文件
                 patches.append((ps_node.start_byte, ps_node.end_byte, f"\"${tmp_var}\""))
                 
