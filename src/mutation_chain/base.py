@@ -31,6 +31,38 @@ class BaseMutator(ABC):
 
     def apply_patches(self, source_code: str, patches: list) -> str:
         """Apply code replacement patches (shared logic for all mutators)"""
+        if not patches:
+            return source_code
+        
+        # 过滤被包含的patches，只保留最外部的
+        # 如对于 arr[1]=${bar[1]}, patches:
+        # (0, 16, "arr_1=${bar[1]}"), (10, 15, "bar_1")
+        # 只保留 (0, 16, "arr_1=${bar[1]}")
+        
+        filtered_patches = []
+        for i, current_patch in enumerate(patches):
+            start, end = current_patch[0], current_patch[1]
+            is_contained = False
+            
+            for j, other_patch in enumerate(patches):
+                if i == j:
+                    continue
+                other_start, other_end = other_patch[0], other_patch[1]
+                if other_start <= start and end <= other_end:
+                    # special case: 完全相同的patch
+                    if other_start == start and other_end == end:
+                        if i > j:
+                            is_contained = True
+                            break
+                    else: 
+                        is_contained = True
+                        break
+            
+            if not is_contained:
+                filtered_patches.append(current_patch)
+
+        # reverse apply order
+        patches = filtered_patches
         patches.sort(reverse=True, key=lambda x: x[0])
         for start, end, replacement in patches:
             source_code = source_code[:start] + replacement + source_code[end:]
