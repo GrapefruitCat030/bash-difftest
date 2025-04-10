@@ -129,7 +129,7 @@ class TestReporter:
         # Generate summary statistics
         summary = self._generate_results_summary(results)
         
-        # Group failures by type
+        warning_analysis = [] 
         failure_analysis = []
         for testcase_result in results:
             seed_name = testcase_result.get("seed_name", "unknown_seed")
@@ -137,30 +137,32 @@ class TestReporter:
             pass_num = testcase_result.get("pass_num", 0)
             
             if pass_num == test_count:
-                continue  # Test passed
+                continue  # Testcase passed
 
             if testcase_result.get("tool_error"):
+                failure_analysis.append({"seed_name": seed_name, "error": testcase_result["tool_error"]})
+                continue # Testcase Tool error
+
+            warning_num = testcase_result.get("warning_num", 0)
+            failure_num = testcase_result.get("fail_num", 0)
+            if warning_num > 0:
+                warning_analysis.append({
+                    "seed_name": seed_name,
+                    "warnings_num": warning_num,
+                })
+            if failure_num > 0:
                 failure_analysis.append({
                     "seed_name": seed_name,
-                    "error": testcase_result["tool_error"],
+                    "failures_num": failure_num,
                 })
-                continue
-
-            failure_types = {}
-            for detail in testcase_result.get("details", []):
-                status = detail.get("status", "unknown")
-                failure_types[status] = failure_types.get(status, 0) + 1
-            failure_analysis.append({
-                "seed_name": seed_name,
-                "failures_type_num": failure_types,
-            })
         
         # Build the report
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         report = {
             "timestamp": timestamp,
             "summary": summary,
-            "failure_analysis": failure_analysis,
+            "warning_testcases": warning_analysis,
+            "failure_testcases": failure_analysis,
             "result_details_of_testcases": results,
         }
         
