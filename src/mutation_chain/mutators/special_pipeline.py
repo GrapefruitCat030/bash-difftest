@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional, Tuple
 from src.mutation_chain import BaseMutator
 
-class PipelineMutator(BaseMutator):
-    NAME = "pipeline_mutator"
+class SpecialPipelineMutator(BaseMutator):
+    NAME = "special_pipeline_mutator"
     DESCRIPTION = "将Bash Pipeline语法 |& 转换为 POSIX兼容的 2>&1 | 语法"
     TARGET_FEATURES = {"pipeline"}
     
