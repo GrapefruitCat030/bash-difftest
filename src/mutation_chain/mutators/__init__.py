@@ -4,7 +4,7 @@ Mutators package for Shell Metamorphic Differential Testing Framework
 
 from .array                 import ArrayMutator
 from .process_substitution  import ProcessSubstitutionMutator
-from .pipeline              import PipelineMutator
+from .special_pipeline      import SpecialPipelineMutator
 from .functions             import FunctionsMutator
 from .redirections          import RedirectionsMutator
 from .brace_expansion       import BraceExpansionMutator
@@ -18,7 +18,7 @@ from .variable_assignment   import VariableAssignmentMutator
 __all__ = [
     "ArrayMutator", 
     "ProcessSubstitutionMutator",
-    "PipelineMutator",
+    "SpecialPipelineMutator",
     "FunctionsMutator",
     "RedirectionsMutator",
     "BraceExpansionMutator",

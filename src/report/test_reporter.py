@@ -43,7 +43,7 @@ class TestReporter:
                 text=True,
                 timeout=5
             )
-            if result.exitcode == 0:
+            if result.returncode == 0:
                 return result.stdout.strip()
             else:
                 return f"Unknown ({shell_path})"

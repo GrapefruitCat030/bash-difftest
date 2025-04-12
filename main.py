@@ -137,7 +137,6 @@ def run_difftest(config):
     # init mutator chain
     mutation_chain = MutatorChain()
     register_all_mutators(mutation_chain)
-    mutation_chain.set_debug()
 
     # init differential tester and test reporter
     diffTester = DifferentialTester(

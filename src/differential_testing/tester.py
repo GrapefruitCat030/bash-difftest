@@ -78,7 +78,7 @@ class DifferentialTester:
             status = "SUCCESS"
             if not exit_code_match:
                 status = "FAILURE"
-            elif not stdout_match or not stderr_match:
+            elif not stdout_match and not stderr_match:
                 status = "WARNING"
 
             result = {
