@@ -13,6 +13,7 @@ from .local_variables       import LocalVariablesMutator
 from .conditional_expressions import ConditionalExpressionsMutator 
 from .directory_stack       import DirectoryStackMutator
 from .arithmetic_expansion   import ArithmeticExpansionMutator
+from .variable_assignment   import VariableAssignmentMutator
 
 __all__ = [
     "ArrayMutator", 
@@ -25,5 +26,6 @@ __all__ = [
     "LocalVariablesMutator",
     "ConditionalExpressionsMutator",
     "DirectoryStackMutator",
-    "ArithmeticExpansionMutator"
+    "ArithmeticExpansionMutator",
+    "VariableAssignmentMutator"
 ]
