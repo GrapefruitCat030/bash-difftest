@@ -5,7 +5,10 @@ echo ${#arr[@]}
 echo ${arr[@]}
 arr+=("d")
 
-for i in "${arr[@]}"; do
+for i in ${arr[@]}; do
     echo $i
 done
 
+arr+=(4 $(
+   c=3
+) 1)

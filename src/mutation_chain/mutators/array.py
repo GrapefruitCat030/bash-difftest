@@ -125,8 +125,13 @@ class ArrayMutator(BaseMutator):
                 patches.extend(self._handle_array_element_assignment(node, source_code, context))
             else:
                 # 检查是否为数组追加: arr+=("d")
-                text = source_code[node.start_byte:node.end_byte]
-                if "+=" in text and "(" in text and ")" in text:
+                operator_node = None
+                for child in node.children:
+                    if child.type == "+=":
+                        operator_node = child
+                        break
+                
+                if operator_node and any(child.type == "array" for child in node.children):
                     # 处理数组追加操作
                     patches.extend(self._handle_array_append(node, source_code, context))
 
@@ -320,13 +325,6 @@ class ArrayMutator(BaseMutator):
     
     def _handle_array_append(self, node: tree_sitter.Node, source_code: str, context: Dict[str, Any]) -> List[Tuple[int, int, str]]:
         """处理数组追加 arr+=("d")"""
-
-        text = source_code[node.start_byte:node.end_byte]
-        
-        # 检查是否为数组+=操作
-        if "+=" not in text or "(" not in text or ")" not in text:
-            return []
-        
         # 获取数组名称
         name_node = node.child_by_field_name("name")
         if not name_node:
@@ -343,10 +341,11 @@ class ArrayMutator(BaseMutator):
         if not value_node or value_node.type != "array":
             return []
         
-        # 解析要追加的元素
+        # 解析要追加的元素 - 修改：收集除了括号以外的所有节点作为元素
         elements = []
         for child in value_node.children:
-            if child.type == "string":
+            # 排除括号，接受任何其他类型（包括数字、命令替换等）
+            if child.type != "(" and child.type != ")":
                 elements.append(source_code[child.start_byte:child.end_byte])
         
         if not elements:
@@ -366,4 +365,3 @@ class ArrayMutator(BaseMutator):
         context['arrays'][array_name]['length'] = current_len + len(elements)
         
         return [(node.start_byte, node.end_byte, "; ".join(posix_code_lines))]
-
