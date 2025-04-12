@@ -20,6 +20,10 @@ if [[ $a =~ [0-9]+ ]]; then
     echo "Match 4"
 fi
 
+if [[ ! "m90&" =~ '6' ]]; then
+   echo "Match 4.5"
+fi
+
 a="apple"
 b="banana"
 if [[ $a < $b ]]; then
@@ -44,10 +48,18 @@ if [[ $a -eq 5 || $b -eq 6 ]]; then
     echo "Match 8"
 fi
 
-a="yes"
-b=5
-if [[ ($a = "yes" || $a = "y") && $b -lt 10 ]]; then
+a=5
+if [[ ! $a -eq 6 ]]; then
     echo "Match 9"
+fi
+
+a=1
+b=2
+c=3
+if [[ $a -eq 4 && ( $b -eq 2 || $c -eq 3 ) ]]; then
+    echo "No Match"
+else
+    echo "Match 9.5"
 fi
 
 myvar="exists"
@@ -72,29 +84,21 @@ if [[ -n $var && $var != "foo" ]]; then
     echo "Match 13"
 fi
 
-var=""
-pattern="pattern"
-if [[ $var = $pattern ]]; then
-    echo "Match 14"
-else
-    echo "No match 14"
-fi
-
 count=5
 if [[ $count -gt 0 ]]; then
-    echo "Match 15"
+    echo "Match 14"
 fi
 
 var="test"
 if [[ -n $var ]]; then
-    echo "Match 16"
+    echo "Match 15"
 fi
 
 emptyvar=""
 var_with_spaces="hello world"
 if [[ $emptyvar = "" ]]; then 
-    echo "Match 17"
+    echo "Match 16"
 fi
 if [[ $var_with_spaces = "hello world" ]]; then
-    echo "Match 18"
+    echo "Match 17"
 fi

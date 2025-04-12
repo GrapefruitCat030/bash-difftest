@@ -55,9 +55,10 @@ class ConditionalExpressionsMutator(BaseMutator):
         expr_text = source_code[node.start_byte:node.end_byte]
         inner_expr = expr_text[2:-2].strip()  # 去掉 [[ 和 ]]
         
-        # 处理正则表达式匹配 (=~)
-        if " =~ " in inner_expr:
-            return self._convert_regex_match(inner_expr)
+        # 检查是否包含regex匹配 (=~)
+        for child in node.children:
+            if child.type == "binary_expression" and "=~" in source_code[child.start_byte:child.end_byte]:
+                return self._convert_regex_match_from_node(child, source_code)
         
         # 处理括号分组和逻辑操作符的复杂表达式
         if ("(" in inner_expr and ")" in inner_expr) or " && " in inner_expr or " || " in inner_expr:
@@ -66,21 +67,43 @@ class ConditionalExpressionsMutator(BaseMutator):
         # 处理简单条件表达式
         return self._convert_simple_condition(inner_expr)
     
-    def _convert_regex_match(self, expr: str) -> str:
-        """转换正则表达式匹配"""
-        parts = re.split(r'\s+=~\s+', expr, 1)
-        if len(parts) != 2:
-            return f"[ {expr} ]"  # 无法正确解析，返回原始形式
+    def _convert_regex_match_from_node(self, node: tree_sitter.Node, source_code: str) -> str:
+        """
+        根据AST节点转换正则表达式匹配
+        修改: 增加了对带否定操作符(!)的正则表达式处理
+        """
+        # 检查是否有否定操作符
+        has_negation = False
+        left_expr = ""
+        pattern = ""
         
-        var, pattern = parts
-        var = var.strip()
-        pattern = pattern.strip()
+        # 检查左侧是否为一元表达式(带!)
+        if node.child_by_field_name("left").type == "unary_expression":
+            has_negation = True
+            unary_node = node.child_by_field_name("left")
+            # 获取!后面的实际表达式
+            if unary_node.child_count > 1:  # 确保有足够的子节点
+                expr_node = unary_node.children[1]  # !后面的表达式
+                left_expr = source_code[expr_node.start_byte:expr_node.end_byte]
+        else:
+            left_expr = source_code[node.child_by_field_name("left").start_byte:node.child_by_field_name("left").end_byte]
+        
+        # 获取右侧的正则表达式
+        right_node = node.child_by_field_name("right")
+        if right_node:
+            pattern = source_code[right_node.start_byte:right_node.end_byte]
         
         # 确保变量引用有引号
-        quoted_var = self._ensure_quoted(var)
+        quoted_left = self._ensure_quoted(left_expr)
         
-        # 使用grep替代正则表达式匹配
-        return f"echo {quoted_var} | grep -E \"^{pattern}$\" > /dev/null"
+        # 构建POSIX兼容的grep命令
+        grep_cmd = f"echo {quoted_left} | grep -Eq \"^{pattern}$\""
+        
+        # 如果有否定操作符，添加否定
+        if has_negation:
+            return f"! {grep_cmd}"
+        else:
+            return grep_cmd
     
     def _convert_complex_expression(self, expr: str) -> str:
         """转换包含逻辑操作符或分组的复杂表达式"""
