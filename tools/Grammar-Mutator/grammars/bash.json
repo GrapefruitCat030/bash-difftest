@@ -63,7 +63,7 @@
         ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
         ["<NUMBER>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
         ["<VARIABLE>", " ", "<COMPARE_OP>", " ", "<STRING>"],
-        ["<VARIABLE>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
+        ["$", "<VARIABLE>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
         ["-f", " ", "<FILENAME>"],
         ["-d", " ", "<FILENAME>"],
         ["-e", " ", "<FILENAME>"],
@@ -73,10 +73,7 @@
     ],
 
     "<DIRECTORY_STACK>": [
-        ["pushd", " ", "<ARG_LIST>"],
-        ["popd", " ", "<ARG_LIST>"],
-        ["dirs", " ", "<ARG_LIST>"],
-        ["pushd"],
+        ["pushd", " ", "/tmp"],
         ["popd"],
         ["dirs"]
     ],
@@ -160,13 +157,12 @@
     ],
     "<ARITH_EXPR>": [
         ["<NUMBER>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
-        ["<VARIABLE>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
+        ["$", "<VARIABLE>", " ", "<ARITH_OP>", " ", "<NUMBER>"],
         ["<NUMBER>"],
         ["<VARIABLE>"]
     ],
     "<CONDITION>": [
-        ["<TEST_CMD>"],
-        ["<TEST_EXPRESSION>"]
+        ["<TEST_CMD>"]
     ],
     "<WORD_LIST>": [
         ["<WORD>", " ", "<WORD_LIST>"],
@@ -193,8 +189,7 @@
         ["'", "<STRING_CONTENT>", "'"]
     ],
     "<ARG>": [
-        ["<WORD>"],
-        ["<PROCESS_SUBST_INPUT>"]
+        ["<WORD>"]
     ],
     "<PROCESS_SUBST_INPUT>": [
         ["<", "(", " ", "<STATEMENT_LIST>", " ", ")"]
@@ -238,7 +233,7 @@
         ["<DIGIT>"],
         ["<SPECIAL_CHAR>"]
     ],
-    "<SPECIAL_CHAR>": [["!"], ["@"], ["#"], ["$"], ["%"], ["^"], ["&"], ["*"]],
+    "<SPECIAL_CHAR>": [["!"], ["@"], ["#"], ["$"], ["%"], ["^"], ["*"]],
     "<NUMBER>": [
         ["<DIGIT>"],
         ["<DIGIT>", "<NUMBER>"]

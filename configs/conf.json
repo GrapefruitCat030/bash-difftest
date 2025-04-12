@@ -16,7 +16,7 @@
     "features": [
         "Array",
         "ProcessSubstitution",
-        "Pipeline",
+        "SpecialPipeline",
         "Functions",
         "Redirections",
         "BraceExpansion",
@@ -24,7 +24,8 @@
         "LocalVariables",
         "ConditionalExpressions",
         "DirectoryStack",
-        "ArithmeticExpansion"
+        "ArithmeticExpansion",
+        "VariableAssignment"
     ],
     "seeds_dir": "seeds",
     "seeds_generator_binpath": "tools/grammar_generator-bash",

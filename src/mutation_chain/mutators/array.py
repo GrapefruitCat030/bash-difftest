@@ -86,6 +86,17 @@ class ArrayMutator(BaseMutator):
                         # 如果数组不存在，则添加到上下文
                         if array_name not in context['arrays']:
                             context['arrays'][array_name] = {'is_array': True, 'length': 0}
+            
+            # 识别expansion中的subscript也作为数组的使用
+            elif node.type == "expansion":
+                for child in node.children:
+                    if child.type == "subscript":
+                        name_node = child.child_by_field_name("name")
+                        if name_node:
+                            array_name = source_code[name_node.start_byte:name_node.end_byte]
+                            # 如果数组还未识别，添加到上下文中
+                            if array_name not in context['arrays']:
+                                context['arrays'][array_name] = {'is_array': True, 'length': 0}
 
             # 递归处理子节点
             for child in node.children:
@@ -208,20 +219,16 @@ class ArrayMutator(BaseMutator):
         
         index_text = source_code[index_node.start_byte:index_node.end_byte]
         
-        # # 检查是否为已知数组
-        # if array_name not in context['arrays']:
-        #     return []
-        
         # 处理数字索引
         if index_node.type == "number":
-            # 直接访问指定索引
+            # 直接访问指定索引，即使数组未定义也生成访问代码
             posix_code = f"${array_name}_{index_text}"
             return [(node.start_byte, node.end_byte, posix_code)]
         
         return []
     
     def _handle_array_expansion(self, node: tree_sitter.Node, source_code: str, context: Dict[str, Any]) -> List[Tuple[int, int, str]]:
-        """处理数组扩展 ${arr[@]}, ${#arr[@]}"""
+        """处理数组扩展 ${arr[@]}, ${#arr[@]}, ${arr[*]}"""
         text = source_code[node.start_byte:node.end_byte]
         
         # 查找操作符和subscript节点
@@ -250,19 +257,23 @@ class ArrayMutator(BaseMutator):
         
         index_text = source_code[index_node.start_byte:index_node.end_byte]
 
-        # 检查是否为已知数组 (保留此检查，因为需要知道数组长度)
-        if array_name not in context['arrays']:
-            # 如果是数组长度查询但数组未知，默认返回0
-            if operator == "#" and index_text == "@":
+        # 处理数组长度 ${#arr[@]} - 即使数组未定义也返回0
+        if operator == "#" and (index_text == "@" or index_text == "*"):
+            # 如果数组未定义，返回0，否则返回数组长度
+            if array_name not in context['arrays']:
                 return [(node.start_byte, node.end_byte, "\"0\"")]
-            return []
+            else:
+                return [(node.start_byte, node.end_byte, f"${array_name}__len")]
         
-        # 处理数组长度 ${#arr[@]}
-        if operator == "#" and index_text == "@":
-            return [(node.start_byte, node.end_byte, f"${array_name}__len")]
-        
-        # 处理完整数组展开 ${arr[@]}
-        if index_text == "@":
+        # 处理完整数组展开 ${arr[@]} 或 ${arr[*]}
+        if index_text == "@" or index_text == "*":
+            # 如果数组没有被定义，则将其视为空数组
+            if array_name not in context['arrays']:
+                context['arrays'][array_name] = {'is_array': True, 'length': 0, 'elements': []}
+                # 对于空数组展开，返回空字符串
+                empty_string = "\"\""  # 空字符串
+                return [(node.start_byte, node.end_byte, empty_string)]
+            
             # 构建所有元素的展开
             elements = []
             array_len = context['arrays'][array_name].get('length', 0)
@@ -271,7 +282,20 @@ class ArrayMutator(BaseMutator):
                 elements.append(f"${array_name}_{i}")
             
             if elements:
-                return [(node.start_byte, node.end_byte, " ".join(elements))]
+                # 检查是否在for循环的in后面
+                is_in_for_loop = (node.prev_sibling.type == "in")
+                if is_in_for_loop and index_text == "@":
+                    # for循环中的数组展开不需要额外的引号
+                    elements_string = " ".join(elements)
+                else:
+                    # 其他情况下的数组展开需要用引号包围
+                    elements_string = "\""+" ".join(elements)+"\""
+                
+                return [(node.start_byte, node.end_byte, elements_string)]
+            else:
+                # 对于空数组展开，返回空字符串
+                empty_string = "\"\""  # 空字符串
+                return [(node.start_byte, node.end_byte, empty_string)]
         
         return []
     
@@ -341,7 +365,7 @@ class ArrayMutator(BaseMutator):
         if not value_node or value_node.type != "array":
             return []
         
-        # 解析要追加的元素 - 修改：收集除了括号以外的所有节点作为元素
+        # 解析要追加的元素 - 收集除了括号以外的所有节点作为元素
         elements = []
         for child in value_node.children:
             # 排除括号，接受任何其他类型（包括数字、命令替换等）
