@@ -56,8 +56,7 @@
     "<TEST_CMD>": [
         ["[[ ", "<TEST_EXPRESSION>", " ]]"],
         ["[ ", "<TEST_EXPRESSION>", " ]"],
-        ["test ", "<TEST_EXPRESSION>"],
-        ["<ARITH_EXPANSION>"]
+        ["test ", "<TEST_EXPRESSION>"]
     ],
     "<TEST_EXPRESSION>": [
         ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],

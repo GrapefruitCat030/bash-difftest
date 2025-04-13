@@ -57,7 +57,7 @@ class BaseMutator(ABC):
                         break
                 
                 if start == end: # as a point
-                    if other_start <= start and start < other_end:
+                    if other_start < start and start < other_end:
                         is_contained = True
                         break
                 else:
