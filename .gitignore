@@ -5,8 +5,7 @@ tmp/
 .vscode/
 
 results/posix_code/
-results/reports/*.txt
-results/reports/*.json
+results/reports/*
 
 grammar_generator-*
 

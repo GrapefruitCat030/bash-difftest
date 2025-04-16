@@ -4,6 +4,7 @@ Test Reporter module for generating and saving test reports
 
 import json
 import logging
+import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
@@ -293,10 +294,88 @@ class TestReporter:
         """
         Clear all reports in the output directory
         """
-        if self.output_dir.exists() and self.output_dir.is_dir():
-            for file in self.output_dir.iterdir():
-                if file.is_file() and file.name != ".gitkeep":
-                    file.unlink()
-            logger.info(f"Cleared all reports in {self.output_dir}")
-        else:
+        if not self.output_dir.exists() or not self.output_dir.is_dir():
             logger.warning(f"Output directory {self.output_dir} does not exist or is not a directory")
+            return
+
+        # backup
+        files_to_backup = [file for file in self.output_dir.iterdir() if file.is_file() and file.name != ".gitkeep"]
+        if files_to_backup:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_dir = self.output_dir / f"reports_backup_{timestamp}"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            for file in files_to_backup:
+                shutil.copy2(file, backup_dir / file.name)
+            logger.info(f"Backed up {len(files_to_backup)} report files to {backup_dir}")
+        else:
+            logger.info("No files to back up and clear")
+            return
+    
+        # clear
+        for file in self.output_dir.iterdir():
+            if file.is_file() and file.name != ".gitkeep":
+                file.unlink()
+        logger.info(f"Cleared all reports in {self.output_dir}")
+
+    def collect_failure_reports(self) -> str:
+        """
+        Collect and summarize all failure reports from round files
+        """
+        all_failures = []
+        round_files = sorted(list(self.output_dir.glob("round_*_report.json")))
+        
+        for report_file in round_files:
+            try:
+                with open(report_file, 'r') as f:
+                    report_data = json.load(f)
+                    
+                round_num = report_data.get("metadata", {}).get("round_num", "unknown")
+                
+                failures = []
+                for result in report_data.get("result_details_of_testcases", []):
+                    seed_name = result.get("seed_name", "unknown_seed")
+                    
+                    if "tool_error" in result:
+                        failures.append({
+                            "seed_name": seed_name,
+                            "error_type": "tool_error",
+                            "error": result["tool_error"]
+                        })
+                        continue
+                    
+                    fail_num = result.get("fail_num", 0)
+                    if fail_num > 0:
+                        failure_details = []
+                        for detail in result.get("details", []):
+                            if detail.get("status") == "FAILURE":
+                                failure_details.append(detail)                        
+                        
+                        failures.append({
+                            "seed_name": seed_name,
+                            "failure_count": fail_num,
+                            "details": failure_details
+                        })
+                
+                if failures:
+                    all_failures.append({
+                        "round": round_num,
+                        "failures": failures
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Error processing report file {report_file}: {str(e)}")
+        
+        summary_report = {
+            "total_rounds_analyzed": len(round_files),
+            "rounds_with_failures": len(all_failures),
+            "failure_details": all_failures
+        }
+        
+        filename = f"failures_summary.json"
+        file_path = self.output_dir / filename
+        
+        with open(file_path, "w") as f:
+            json.dump(summary_report, f, indent=2)
+            
+        logger.info(f"Failures summary report saved to: {file_path}")
+        return str(file_path)
