@@ -132,6 +132,7 @@ def run_difftest(config):
     RESET = "\033[0m"
 
     logger = logging.getLogger("differential-testing")
+    logger.setLevel(logging.INFO)
     logger.info("Starting differential testing phase")
     
     # init mutator chain
@@ -146,7 +147,7 @@ def run_difftest(config):
     )
     report_dir = config.get("results").get("reports")
     reporter = TestReporter(report_dir)
-
+    reporter.clear_reports()
     
     # infinite loop for testing
     round_num = 0 
@@ -205,7 +206,7 @@ def run_difftest(config):
             logger.info(f"End Round [{round_num}]. Round summary: Tests: {round_summary['total_tests']}, " 
                         f"Passed: {round_summary['passed']}, Failed: {round_summary['failed']}, "
                         f"Warnings: {round_summary['warnings']}, Errors: {round_summary['errors']}")
-            logger.info(f"Report saved to {report_dir}/round_{round_num}")
+            logger.debug(f"Report saved to {report_dir}/round_{round_num}")
             
             # clear round results
             round_results.clear()

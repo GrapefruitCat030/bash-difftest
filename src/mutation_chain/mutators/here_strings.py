@@ -56,7 +56,7 @@ class HereStringsMutator(BaseMutator):
         # 获取字符串内容
         string_content = None
         for child in node.children:
-            if child.type == "string":
+            if child.type == "string" or child.type == "raw_string":
                 string_content = source_code[child.start_byte:child.end_byte]
                 break
         

@@ -10,13 +10,14 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class TestReporter:
     """
     Generates and saves test reports from differential testing results
     """
     
-    def __init__(self, output_dir: str = "results/tests"):
+    def __init__(self, output_dir: str = "results/reports"):
         """
         Initialize the test reporter
         
@@ -110,7 +111,7 @@ class TestReporter:
         with open(file_path, "w") as f:
             json.dump(report, f, indent=2)
             
-        logger.info(f"JSON report saved to: {file_path}")
+        logger.debug(f"JSON report saved to: {file_path}")
         return str(file_path)
         
     def _generate_report(self,
@@ -288,3 +289,14 @@ class TestReporter:
                 
         return saved_files, report["global_summary"]
 
+    def clear_reports(self):
+        """
+        Clear all reports in the output directory
+        """
+        if self.output_dir.exists() and self.output_dir.is_dir():
+            for file in self.output_dir.iterdir():
+                if file.is_file() and file.name != ".gitkeep":
+                    file.unlink()
+            logger.info(f"Cleared all reports in {self.output_dir}")
+        else:
+            logger.warning(f"Output directory {self.output_dir} does not exist or is not a directory")

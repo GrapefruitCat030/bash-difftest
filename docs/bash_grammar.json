@@ -246,7 +246,7 @@
     ],
     "<BUILTIN_CMD>": [
         ["pwd"], ["echo"], ["read"], ["export"], ["eval"],
-        ["alias"], ["unalias"], ["declare"], ["readonly"], 
+        ["alias"], ["unalias"], ["readonly"], 
         ["set"], ["unset"],
         ["true"], ["false"], ["type"], ["help"], ["printf"]
     ],
