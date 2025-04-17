@@ -39,7 +39,6 @@ def execute_shell_command(
             input=input_bytes,
             timeout=timeout,
             env=env,
-            preexec_fn=os.setpgrp,
             capture_output=True,
             text=False  # We'll decode manually to handle errors better, use bytes
         )

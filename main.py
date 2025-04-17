@@ -8,6 +8,8 @@ import shutil
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning, module="tree_sitter")
 
+import os
+import psutil
 import argparse
 import logging
 import sys
@@ -30,12 +32,36 @@ import src.utils as utils
 
 def setup_logger():
     """Set up the logger for the application"""
+    
+    # ANSI escape sequences for colors
+    RED = "\033[91m"
+    YELLOW = "\033[93m"
+    RESET = "\033[0m"
+
+    class ColorFormatter(logging.Formatter):
+        def format(self, record):
+            if record.levelno == logging.INFO:
+                levelname_color = f"{RESET}{record.levelname:<8}{RESET}"
+            elif record.levelno == logging.WARNING:
+                levelname_color = f"{YELLOW}{record.levelname:<8}{RESET}"
+            elif record.levelno == logging.ERROR:
+                levelname_color = f"{RED}{record.levelname:<8}{RESET}"
+            else:
+                levelname_color = f"{record.levelname:<8}"
+
+            record.levelname = levelname_color
+            record.name = f"{record.name:<25}"  # model name
+            return super().format(record)
+
+    log_format = "%(asctime)s - [%(levelname)s] [%(name)s] - %(message)s"
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(ColorFormatter(log_format))
+
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
+            handler,
             logging.FileHandler("shell_testing.log"),
-            logging.StreamHandler(sys.stdout)
         ]
     )
     return logging.getLogger("shell-metamorphic-testing")
@@ -66,7 +92,6 @@ def register_all_mutators(chain: MutatorChain) -> MutatorChain:
 class GracefulExit(Exception):
     pass
 
-# TODO: add a detect thread to control the memory and disk usage, interrupt the process if it exceeds the limit
 def graceful_exit_handler(signum, frame):
     raise GracefulExit()
 
@@ -126,10 +151,6 @@ def run_difftest(config):
     """
     Testing phase: Run differential tests using the prepared mutators
     """
-   # ANSI escape sequences for colors
-    GREEN = "\033[92m"
-    RED = "\033[91m"
-    RESET = "\033[0m"
 
     logger = logging.getLogger("differential-testing")
     logger.setLevel(logging.INFO)
@@ -212,7 +233,7 @@ def run_difftest(config):
             round_results.clear()
 
     except GracefulExit:
-        logger.info("Graceful exit triggered. generate summary report and exit.")
+        logger.info("[Graceful Exit] triggered. generate summary report and exit.")
         if round_num <= 0:
             logger.info("No rounds completed. Exiting.")
             return
@@ -235,6 +256,7 @@ def run_difftest(config):
         logger.info(f"Total errors:     {summary['errors']}")
         logger.info(f"Effective rate:   {summary['effective_rate']}")
         logger.info(f"Success rate:     {summary['success_rate']}")
+        reporter.collect_failure_reports()
 
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")
