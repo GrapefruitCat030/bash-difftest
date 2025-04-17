@@ -5,7 +5,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int = 100) -> None:
+def generate_seed_scripts(seedgen_path: str, seed_dir: Path, seed_count: int = 10, seed_depth: int = 100) -> None:
     """
     Generates a random bash scripts seeds.
     """
@@ -15,7 +15,7 @@ def generate_seed_scripts(seed_dir: Path, seed_count: int = 10, seed_depth: int 
     # generate seeds 
     try:
         subprocess.run(
-            ["tools/grammar_generator-bash", str(seed_count), str(seed_depth), str(subdir_seeds), str(subdir_trees)], # TODO: hardcode path, to be changed
+            [seedgen_path, str(seed_count), str(seed_depth), str(subdir_seeds), str(subdir_trees)], # TODO: hardcode path, to be changed
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=True,

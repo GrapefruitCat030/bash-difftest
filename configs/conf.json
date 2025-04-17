@@ -28,7 +28,11 @@
         "VariableAssignment"
     ],
     "seeds_dir": "seeds",
-    "seeds_generator_binpath": "tools/grammar_generator-bash",
+    "seedgen": {
+        "binpath": "tools/grammar_generator-bash",
+        "seed_count": 10,
+        "seed_depth": 100
+    },
     "results": {
         "mutators": "src/mutation_chain/mutators",
         "posix_code": "results/posix_code",

@@ -193,7 +193,10 @@ def run_difftest(config):
             round_seed_dir = Path(base_seed_dir) / f"round_{round_num}"
             round_seed_dir.mkdir(parents=True, exist_ok=True)
 
-            utils.generate_seed_scripts(round_seed_dir, 10, 100)
+            seedgen_path  = config.get("seedgen").get("binpath")
+            seedgen_count = config.get("seedgen").get("seed_count", 10)
+            seedgen_depth = config.get("seedgen").get("seed_depth", 100)
+            utils.generate_seed_scripts(seedgen_path, round_seed_dir, seedgen_count, seedgen_depth)
 
             # get all test seed files
             seed_files = list(Path(round_seed_dir).glob("*"))
