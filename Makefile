@@ -2,9 +2,6 @@
 
 # Python settings
 PYTHON := python3
-VENV := venv
-PIP := $(VENV)/bin/pip
-PYTHON_VENV := $(VENV)/bin/python
 
 # Project directories
 SRC_DIR := src
@@ -29,7 +26,7 @@ YELLOW := \033[0;33m
 RED := \033[0;31m
 NC := \033[0m # No Color
 
-.PHONY: help init venv test mutators clean clean-reports clean-mutators clean-venv
+.PHONY: help init venv test mutators clean-reports clean-mutators clean-venv
 
 # Default target
 help:
@@ -69,8 +66,7 @@ mutators: init
 		cp -R $(MUTATORS_DIR)/* $(BACKUP_DIR)/mutators_$(TIMESTAMP)/; \
 	fi
 	@echo "$(GREEN)Running mutator generation...$(NC)"
-	$(PYTHON_VENV) main.py --mode prepare 
-	@echo "$(GREEN)Mutators generated successfully!$(NC)"
+	$(PYTHON) main.py --mode prepare 
 
 # Run tests
 test: 
@@ -79,14 +75,13 @@ test:
 		echo "$(RED)Error: No mutators found in $(MUTATORS_DIR). Run 'make mutators' first.$(NC)"; \
 		exit 1; \
 	fi
-	python main.py --mode testing
-	@echo "$(GREEN)Tests completed! See $(REPORT_DIR) for results.$(NC)"
-	@echo "$(GREEN)Generating the coverage report...$(NC)"
-	@bash scripts/coverage.sh
-	@echo "$(GREEN)Coverage report generated!$(NC)"
+	$(PYTHON) main.py --mode testing
 
-# Clean up generated files
-clean: clean-reports clean-transformed clean-mutators clean-venv
+# Collect test coverage
+coverage:
+	@echo "$(GREEN)Generating the coverage report...$(NC)"
+	@bash scripts/report_coverage.sh
+	@echo "$(GREEN)Coverage report generated!$(NC)"
 
 # Clean up test reports
 clean-reports:
