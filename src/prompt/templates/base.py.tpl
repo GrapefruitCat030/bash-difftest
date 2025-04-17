@@ -2,17 +2,6 @@ import tree_sitter
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
-# Initialize tree-sitter parser
-def initialize_parser():
-    tree_sitter.Language.build_library(
-        'build/my-languages.so',
-        ['/user/to/tree-sitter-bash']
-    )
-    BASH_LANGUAGE = tree_sitter.Language('build/my-languages.so', 'bash')
-    parser = tree_sitter.Parser()
-    parser.set_language(BASH_LANGUAGE)
-    return parser
-
 class BaseMutator(ABC):
     #  be overridden by subclasses
     NAME = "base_transformer"  # 转换器名称
