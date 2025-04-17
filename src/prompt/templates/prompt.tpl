@@ -115,6 +115,8 @@ $posix_example
 - **具体Mutator类实现**：
 
   ```python
+  from src.mutation_chain import BaseMutator
+  
   class {feature}Mutator(BaseMutator):
       # 定义转换器基本信息
       NAME = "{feature}_mutator"  # 转换器名称
