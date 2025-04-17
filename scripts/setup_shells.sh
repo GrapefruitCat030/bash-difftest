@@ -14,6 +14,12 @@ cd "$SHELL_DIR"
 
 echo "=== 安装带gcov flag的shell ==="
 
+# 检查 automake 是否安装
+if ! command -v automake &> /dev/null; then
+  echo "automake is not installed. Installing..."
+  sudo apt install automake
+fi
+
 if [ ! -d "$SHELL_DIR/bash-$BASH_VERSION" ]; then
   echo "downloading sources code: bash-$BASH_VERSION..."
   wget "https://ftp.gnu.org/gnu/bash/bash-$BASH_VERSION.tar.gz"
@@ -30,12 +36,6 @@ if [ ! -d "$SHELL_DIR/bash-$BASH_VERSION" ]; then
   cd "$SHELL_DIR"
 else
   echo "bash-$BASH_VERSION has already been downloaded and compiled. Skip."
-fi
-
-# 检查 automake 是否安装
-if ! command -v automake &> /dev/null; then
-  echo "automake is not installed. Installing..."
-  sudo apt install automake
 fi
 
 # 当前已经准备好 dash 的源码, 修改了automake配置文件，使得dash支持gcov

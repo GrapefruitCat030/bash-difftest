@@ -39,13 +39,13 @@
         "reports": "results/reports"
     },
     "shell_sourcecode_path": "shell",
-    "bash_binpath": "/bin/bash",
-    "posix_binpath": "/bin/dash",
+    "bash_binpath": "shell/bin/bash",
+    "posix_binpath": "shell/bin/dash",
     "timeout": 5,
     "validation": {
         "validate_examples_dir": "corpus/examples",
-        "bash_binpath": "shell/bash-5.2/bash",
-        "posix_binpath": "shell/dash-0.5.12/src/dash",
+        "bash_binpath": "shell/bin/bash",
+        "posix_binpath": "shell/bin/dash",
         "max_validation_attempts": 3,
         "timeout": 5
     }

@@ -8,7 +8,6 @@ echo "=== 安装覆盖率工具 ==="
 echo "检查覆盖率工具是否已安装..."
 if [ -x "$(command -v lcov)" ]; then
   echo "lcov has already been installed. Skip."
-  exit 0
 else
   echo "lcov has not been installed. Start installing..."
   apt-get install -y lcov
@@ -16,7 +15,6 @@ fi
 
 if [ -x "$(command -v genhtml)" ]; then
   echo "genhtml has already been installed. Skip."
-  exit 0
 else
   echo "genhtml has not been installed. Start installing..."
   apt-get install -y lcov
