@@ -20,7 +20,8 @@
   1. 使用 `docker pull grapefruitcat030/bash-difftest:dev` 拉取测试框架镜像；
   2. 进入 `/workspace` 目录，运行 `make test`，执行测试，过程可以使用 `ctrl+C` 停止测试，会自动生成测试报告到 `results/report` 目录。
   3. 测试过程中，可能存在未能正常结束运行的shell，需要运行 `scripts/monitor.py` 进行实时监测清理。
-  4. 测试完毕后，运行 `make coverage` 生成对应测试覆盖率报告。
+  4. 测试完毕时，可以运行 `scripts/failure_filter.py` 脚本对无关错误进行过滤, 结果同样保存到 `results/report` 目录。
+  5. 测试完毕后，运行 `make coverage` 生成对应测试覆盖率报告。
 
 ## 项目架构
 
