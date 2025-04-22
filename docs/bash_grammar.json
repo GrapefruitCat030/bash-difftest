@@ -54,20 +54,25 @@
     ],
     "<TEST_CMD>": [
         ["[[ ", "<TEST_EXPRESSION>", " ]]"],
-        ["[ ", "<TEST_EXPRESSION>", " ]"],
-        ["test ", "<TEST_EXPRESSION>"]
+        ["[[ ! ", "<TEST_EXPRESSION>", " ]]"],
+        ["[ ", "<TEST_EXPRESSION_FOR_TESTCMD>", " ]"],
+        ["[ ! ", "<TEST_EXPRESSION_FOR_TESTCMD>", " ]"],
+        ["test ", "<TEST_EXPRESSION_FOR_TESTCMD>"]
     ],
     "<TEST_EXPRESSION>": [
         ["<STRING>", " ", "<COMPARE_OP>", " ", "<STRING>"],
         ["<NUMBER>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
-        ["<VARIABLE>", " ", "<COMPARE_OP>", " ", "<STRING>"],
+        ["$", "<VARIABLE>", " ", "<COMPARE_OP>", " ", "<STRING>"],
         ["$", "<VARIABLE>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"],
         ["-f", " ", "<FILENAME>"],
         ["-d", " ", "<FILENAME>"],
         ["-e", " ", "<FILENAME>"],
         ["-z", " ", "<STRING>"],
-        ["-n", " ", "<STRING>"],
-        ["!", " ", "<TEST_EXPRESSION>"]
+        ["-n", " ", "<STRING>"]
+    ],
+    "TEST_EXPRESSION_FOR_TESTCMD": [
+        ["<STRING>", " ", "<COMPARE_OP_FOR_TESTCMD>", " ", "<STRING>"],
+        ["<NUMBER>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"]
     ],
 
     "<DIRECTORY_STACK>": [
@@ -176,6 +181,7 @@
     ],
 
     "<COMPARE_OP>": [["=="], ["!="], ["=~"]],
+    "<COMPARE_OP_FOR_TESTCMD>": [["="], ["!="]],
     "<ARITH_COMPARE_OP>": [["-eq"], ["-ne"], ["-lt"], ["-gt"], ["-le"], ["-ge"]],
     "<ARITH_OP>": [["+"], ["-"], ["*"], ["/"], ["%"]],
 
@@ -234,9 +240,10 @@
     "<SPECIAL_CHAR>": [["!"], ["@"], ["#"], ["$"], ["%"], ["^"], ["*"]],
     "<NUMBER>": [
         ["<DIGIT>"],
-        ["<DIGIT>", "<NUMBER>"]
+        ["<POSITIVE_DIGIT>", "<NUMBER>"]
     ],
     "<DIGIT>": [["0"], ["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"]],
+    "<POSITIVE_DIGIT>": [["1"], ["2"], ["3"], ["4"], ["5"], ["6"], ["7"], ["8"], ["9"]],
     "<ALPHA_CHAR>": [
         ["a"],["b"],["c"],["d"],["e"],["f"],["g"],["h"],["i"],["j"],["k"],["l"],["m"],
         ["n"],["o"],["p"],["q"],["r"],["s"],["t"],["u"],["v"],["w"],["x"],["y"],["z"],
@@ -246,8 +253,7 @@
     "<BUILTIN_CMD>": [
         ["pwd"], ["echo"], ["read"], ["export"], ["eval"],
         ["alias"], ["unalias"], ["readonly"], 
-        ["set"], ["unset"],
-        ["true"], ["false"], ["type"], ["help"], ["printf"]
+        ["true"], ["false"], ["type"], ["printf"]
     ],
     "<EXTERNAL_CMD>": [
         ["ls"], ["grep"], ["cat"], ["sed"], ["awk"], ["find"], ["sort"],

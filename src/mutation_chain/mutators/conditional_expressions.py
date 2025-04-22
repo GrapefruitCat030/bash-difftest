@@ -54,7 +54,7 @@ class ConditionalExpressionsMutator(BaseMutator):
         """将单个 [[ ]] 条件表达式转换为POSIX语法"""
         expr_text = source_code[node.start_byte:node.end_byte]
         inner_expr = expr_text[2:-2].strip()  # 去掉 [[ 和 ]]
-        
+
         # 检查是否包含regex匹配 (=~)
         for child in node.children:
             if child.type == "binary_expression" and "=~" in source_code[child.start_byte:child.end_byte]:
@@ -97,13 +97,13 @@ class ConditionalExpressionsMutator(BaseMutator):
         quoted_left = self._ensure_quoted(left_expr)
         
         # 构建POSIX兼容的grep命令
-        grep_cmd = f"echo {quoted_left} | grep -Eq \"^{pattern}$\""
+        grep_cmd = f"echo {quoted_left} | grep -Eq \"{pattern}\""
         
         # 如果有否定操作符，添加否定
         if has_negation:
-            return f"! {grep_cmd}"
+            return f"(! {grep_cmd})"
         else:
-            return grep_cmd
+            return f"({grep_cmd})"
     
     def _convert_complex_expression(self, expr: str) -> str:
         """转换包含逻辑操作符或分组的复杂表达式"""
@@ -192,44 +192,51 @@ class ConditionalExpressionsMutator(BaseMutator):
     def _convert_condition_parts(self, expr: str) -> str:
         """转换条件表达式的各个部分"""
         expr = expr.strip()
-        
+
+        has_negation = False
+        if expr.startswith("!"):
+            has_negation = True
+            expr = expr[1:].strip()
+
         # 处理变量存在检查 -v 语法
         if expr.startswith("-v "):
             var = expr[3:].strip()
             # 移除可能的 $ 符号
             if var.startswith("$"):
                 var = var[1:]
+            if has_negation:
+                return f"-z \"${{{var}+x}}\""
             return f"-n \"${{{var}+x}}\""
-        
+
         # 处理 == 比较 (在POSIX中用 = 替代)
         if " == " in expr:
             left, right = expr.split(" == ", 1)
-            return f"{self._ensure_quoted(left.strip())} = {self._ensure_quoted(right.strip())}"
-        
+            return f"{self._ensure_quoted(left.strip())} = {self._ensure_quoted(right.strip())}" if not has_negation else f"{self._ensure_quoted(left.strip())} != {self._ensure_quoted(right.strip())}"
+
         # 处理 != 比较
         if " != " in expr:
             left, right = expr.split(" != ", 1)
-            return f"{self._ensure_quoted(left.strip())} != {self._ensure_quoted(right.strip())}"
+            return f"{self._ensure_quoted(left.strip())} != {self._ensure_quoted(right.strip())}" if not has_negation else f"{self._ensure_quoted(left.strip())} = {self._ensure_quoted(right.strip())}"
         
         # 处理 < 比较 (在POSIX中需要转义)
         if " < " in expr:
             left, right = expr.split(" < ", 1)
-            return f"{self._ensure_quoted(left.strip())} \\< {self._ensure_quoted(right.strip())}"
+            return f"{self._ensure_quoted(left.strip())} \\< {self._ensure_quoted(right.strip())}" if not has_negation else f"! {self._ensure_quoted(left.strip())} \\< {self._ensure_quoted(right.strip())}"
         
         # 处理 > 比较 (在POSIX中需要转义)
         if " > " in expr:
             left, right = expr.split(" > ", 1)
-            return f"{self._ensure_quoted(left.strip())} \\> {self._ensure_quoted(right.strip())}"
+            return f"{self._ensure_quoted(left.strip())} \\> {self._ensure_quoted(right.strip())}" if not has_negation else f"! {self._ensure_quoted(left.strip())} \\> {self._ensure_quoted(right.strip())}"
         
         # 处理 -n 非空检查
         if expr.startswith("-n "):
             var = expr[3:].strip()
-            return f"-n {self._ensure_quoted(var)}"
+            return f"-n {self._ensure_quoted(var)}" if not has_negation else f"-z {self._ensure_quoted(var)}"
         
-        # 处理 ! -z 变量非空检查 (等价于 -n)
-        if expr.startswith("! -z "):
+        # 处理 -z 变量非空检查 
+        if expr.startswith("-z "):
             var = expr[5:].strip()
-            return f"-n {self._ensure_quoted(var)}"
+            return f"-z {self._ensure_quoted(var)}" if not has_negation else f"-n {self._ensure_quoted(var)}"
         
         # 处理其他条件，确保变量引用都有引号
         return self._add_quotes_to_vars(expr)

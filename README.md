@@ -81,6 +81,11 @@ graph TD
     test_results --> reporter["报告生成器<br>TestReporter"]
     reporter --> report_files["测试报告<br>results/reports/"]
 
+    %% 失败过滤
+    report_files --> failure_filter["failure_filter.py<br>自动过滤"]
+    failure_filter --> filtered_reports["过滤后报告<br>results/reports/*.filtered.json"]
+    filtered_reports -->|"人工检查与修正"| failure_filter
+
     %% 工具与依赖
     utils["通用工具<br>src/utils/"] -.-> config_loader
     utils -.-> diff_tester
@@ -94,8 +99,8 @@ graph TD
     classDef flow fill:#fff,stroke:#333,stroke-width:1px;
 
     class main,prep,test,seedgen primary;
-    class generator,validator,mutation_chain,diff_tester,reporter,grammar_mutator,grammar_generator,prompt_engine,llm secondary;
-    class feature_list,seeds_dir,mutator_files,posix_files,test_results,report_files,trees_dir,mutator_code,save_mutator,feature_in,feedback data;
+    class generator,validator,mutation_chain,diff_tester,reporter,grammar_mutator,grammar_generator,prompt_engine,llm,failure_filter secondary;
+    class feature_list,seeds_dir,mutator_files,posix_files,test_results,report_files,trees_dir,mutator_code,save_mutator,feature_in,feedback,filtered_reports,final_reports data;
     class config,utils,tree_sitter config;
     class mode,seed_loader,load_mutators flow;
     class bash,dash flow;

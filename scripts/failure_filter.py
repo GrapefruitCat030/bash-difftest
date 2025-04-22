@@ -1,4 +1,5 @@
 import json
+import re
 
 # filter rules
 
@@ -19,10 +20,55 @@ def is_timeout_empty(detail):
         return True
     return False
 
+def is_value_too_great_base(detail):
+    bash_stderr = detail.get("bash_stderr", "")
+    if "value too great for base" in bash_stderr:
+        return True
+    return False 
+
+def is_test_expr_error(detail):
+    bash_stderr = detail.get("bash_stderr", "")
+    posix_stderr = detail.get("posix_stderr", "")
+    if "==: unexpected operator" in posix_stderr:
+        return True
+    if "[: Illegal number:" in posix_stderr:
+        return True
+    if re.search(r"\[: .*: unexpected operator", posix_stderr):
+        return True
+    if re.search(r"test: .*: unexpected operator", posix_stderr):
+        return True
+    return False
+
+def is_built_in_error(detail):
+    bash_stderr = detail.get("bash_stderr", "")
+    posix_stderr = detail.get("posix_stderr", "")
+    if "help: not found" in posix_stderr:
+        return True
+    if "read: arg count" in posix_stderr:
+        return True
+    return False
+
+def is_pass_testcase(detail):
+    # check array error chain problem
+    bash_stdout = detail.get("bash_stdout", "") 
+    posix_stdout = detail.get("posix_stdout", "")
+    bash_stderr = detail.get("bash_stderr", "")
+    posix_stderr = detail.get("posix_stderr", "")
+    bash_exit_code = detail.get("bash_exit_code", 0)
+    posix_exit_code = detail.get("posix_exit_code", 0)
+    if (bash_stdout == posix_stdout and
+        bash_stderr ==  posix_stderr and
+        bash_exit_code != posix_exit_code):
+        return True
+    return False
 
 # TODO: more rules
 FILTER_RULES = [
     is_timeout_empty,
+    is_value_too_great_base,
+    is_test_expr_error,
+    is_built_in_error,
+    is_pass_testcase,
 ]
 
 def should_filter(detail):

@@ -176,10 +176,10 @@ class ArrayMutator(BaseMutator):
 
         # 生成POSIX兼容代码
         posix_code = []
+        posix_code.append(f"{array_name}__len={len(elements)};")
         for i, element in enumerate(elements):
             posix_code.append(f"{array_name}_{i}={element};")
         
-        posix_code.append(f"{array_name}__len={len(elements)}")
         
         # 记录数组信息到上下文
         context['arrays'][array_name] = {
@@ -334,16 +334,16 @@ class ArrayMutator(BaseMutator):
         # 处理常量索引
         if index_node.type == "number":
             posix_index = int(index_text)
-            posix_code = f"{array_name}_{posix_index}={value_text}"
+            posix_code = f"{array_name}_{posix_index}={value_text};"
             
             # 如果需要更新数组长度
             update_len = ""
             if posix_index >= context['arrays'][array_name].get('length', 0):
-                update_len = f"; {array_name}__len=$(({posix_index} + 1))"
+                update_len = f"{array_name}__len=$(({posix_index} + 1)); "
                 # 更新上下文中的长度
                 context['arrays'][array_name]['length'] = posix_index + 1
             
-            return [(node.start_byte, node.end_byte, f"{posix_code}{update_len}")]
+            return [(node.start_byte, node.end_byte, f"{update_len}{posix_code}")]
         
         return []
     
@@ -379,11 +379,10 @@ class ArrayMutator(BaseMutator):
         posix_code_lines = []
         current_len = context['arrays'][array_name].get('length', 0)
         
+        posix_code_lines.append(f"{array_name}__len=$(({current_len} + {len(elements)}))")
         for i, element in enumerate(elements):
             new_index = current_len + i
             posix_code_lines.append(f"{array_name}_{new_index}={element}")
-        
-        posix_code_lines.append(f"{array_name}__len=$(({current_len} + {len(elements)}))")
         
         # 更新上下文中的长度
         context['arrays'][array_name]['length'] = current_len + len(elements)
