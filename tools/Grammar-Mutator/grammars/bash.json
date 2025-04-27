@@ -70,7 +70,7 @@
         ["-z", " ", "<STRING>"],
         ["-n", " ", "<STRING>"]
     ],
-    "TEST_EXPRESSION_FOR_TESTCMD": [
+    "<TEST_EXPRESSION_FOR_TESTCMD>": [
         ["<STRING>", " ", "<COMPARE_OP_FOR_TESTCMD>", " ", "<STRING>"],
         ["<NUMBER>", " ", "<ARITH_COMPARE_OP>", " ", "<NUMBER>"]
     ],
