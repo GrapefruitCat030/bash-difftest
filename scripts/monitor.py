@@ -14,7 +14,7 @@ CHECK_INTERVAL = 10
 
 shell_lst = [
     "/workspace/shell/dash-0.5.12/src/dash",
-    "/workspace/shell/bash-5.1/bash",
+    "/workspace/shell/bash-5.2/bash",
 ]
 
 def is_shell_proc(proc):
