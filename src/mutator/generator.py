@@ -38,7 +38,7 @@ class MutatorGenerator:
         # Generate prompt using your existing prompt engine
         prompt = self.prompt_engine.generate_mutator_prompt(feature=feature)
         # Generate the mutator code
-        mutator_code = self.llm_client.generate_code(prompt)
+        mutator_code = self.llm_client.generate_response(prompt)
         
         return mutator_code
         

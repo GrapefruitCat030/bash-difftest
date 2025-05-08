@@ -13,11 +13,6 @@ class LLMClient:
         response = self.provider.generate_response(prompt)
         content = self.provider.extract_response(response)
         return content
-    
-    def refine_code(self, prompt: str):
-        response = self.provider.refine_code(prompt)
-        content = self.provider.extract_response(response)
-        return content
 
     def clear_history(self):
         self.provider.clear_conversation_history() 
