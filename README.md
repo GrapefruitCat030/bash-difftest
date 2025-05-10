@@ -41,18 +41,11 @@ graph TD
     
     %% MutatorGenerator 细化
     feature_list --> generator["Mutator生成器<br>MutatorGenerator"]
-    subgraph MutatorGenerator [MutatorGenerator]
-        direction LR
-        feature_in["特性名"] --> prompt_engine["PromptEngine<br>提示工程"]
-        prompt_engine --> llm["LLMClient<br>大模型"]
-        llm --> mutator_code["Mutator代码"]
-        mutator_code --> validator["MutatorValidator<br>验证器"]
-        validator -->|通过| save_mutator["保存Mutator"]
-        validator -->|失败| feedback["验证反馈"]
-        feedback --> prompt_engine
-    end
-    generator --> MutatorGenerator
-
+    generator --> mutator_code["Mutator代码"]
+    mutator_code --> validator["MutatorValidator<br>验证器"]
+    validator -->|通过| save_mutator["保存Mutator"]
+    validator -->|失败| feedback["验证反馈"]
+    feedback --> generator
     save_mutator --> mutator_files["Mutator文件<br>src/mutation_chain/mutators/"]
 
     %% 种子生成阶段

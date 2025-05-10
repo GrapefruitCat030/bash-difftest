@@ -61,7 +61,7 @@ class MutatorGenerator:
         refinement_prompt = self.prompt_engine.generate_refinement_prompt(
             feature=feature,
             feedback=feedback,
-            previous_code=previous_code
+            previous_mutator_code=previous_code
         )
         
         # Generate refined code
